@@ -2,7 +2,6 @@ import traceback
 
 from pandas import DataFrame
 
-from calculate_coefficients import compute_coefficients_array
 import numpy as np
 from flask import Flask, request, jsonify, g
 from flask_login import LoginManager, login_user, logout_user, UserMixin
@@ -23,7 +22,6 @@ from flask_httpauth import HTTPBasicAuth
 import json
 import pandas as pd
 import logging
-from calculate_coefficients import compute_coefficients_array
 from fuzzywuzzy import process
 import uuid
 from tapipy.tapis import Tapis
@@ -557,42 +555,45 @@ def get_user_datasets():
         logging.error(traceback.format_exc())
         return jsonify({'message': 'An error occurred while processing the file', 'error': str(e)}), 500
     
+
+@app.route("/getMessages", methods=["GET"])
+def get_messages():
+    sender_id = int(request.args.get("sender_id"))
+    receiver_id = int(request.args.get("receiver_id"))
     
+    # Fetching messages from the database
+    messages = db['messages'].find({
+        "$or": [
+            {"senderID": sender_id, "receiverID": receiver_id},
+            {"senderID": receiver_id, "receiverID": sender_id}
+        ]
+    })
 
+    # Formatting the response
+    messages_list = []
+    for message in messages:
+        messages_list.append({
+            "senderID": message["senderID"],
+            "receiverID": message["receiverID"],
+            "message": message["message"],
+            "timestamp": message["timestamp"]
+        })
+    
+    return jsonify(messages_list)
 
-@app.route('/api/calculations', methods=['GET'])
-def calculate_cofficients():
+@app.route("/sendMessage", methods=["POST"])
+def send_message():
     data = request.json
-    user1 = data['user1']
-    user2 = data['user2']
+    message = {
+        "senderID": data["senderID"],
+        "receiverID": data["receiverID"],
+        "message": data["message"],
+        "timestamp": data["timestamp"]
+    }
 
-    
+    db['messages'].insert_one(message)
+    return jsonify({"status": "Message sent"}), 201
 
-    # Connect to MongoDB
-    client = MongoClient(os.getenv("MONGO_URI"))
-
-    try:
-        # Get datasets for both users
-        df_user1 = get_user_dataset(client, user1)
-        df_user2 = get_user_dataset(client, user2)
-
-        # Merge the datasets
-
-        merged_data = pd.concat([df_user1, df_user2], axis=1)
-  
-        # Compute coefficients
-        coeff_arr = compute_coefficients_array(merged_data)
-
-        # Convert the results to a table format (DataFrame)
-        results_table = pd.DataFrame(list(coeff_arr.items()), columns=['Pair', 'Coefficient'])
-        
-        # Return the table as a JSON response
-        return results_table.to_json(orient='records'), 200
-
-    except ValueError as ve:
-        return jsonify({'message': str(ve)}), 404
-    except Exception as e:
-        return jsonify({'message': 'An error occurred', 'error': str(e)}), 500
 
 
 if __name__ == '__main__':
