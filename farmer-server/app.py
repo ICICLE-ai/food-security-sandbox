@@ -402,6 +402,8 @@ def train_local_model():
         weights = train_nn_model(model, X_train, y_train, optimizer, criterion)
     else:
 
+
+
         model.fit(X_train, y_train)  # Train on the full dataset (or user-specific data)
 
     # Get the model weights (updates).  This is what we send back to Server A.
