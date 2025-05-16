@@ -74,11 +74,11 @@ function App() {
       <Routes>
         <Route path="/" element={isAuthenticated ? <Home /> : <Login setIsAuthenticated={setIsAuthenticated}  />} />
         <Route path="/register" element={<NewUser />} />
-        <Route path="/training" element={isAuthenticated ? <CollaborativeML /> : <Navigate to="/login" />} />
-        <Route path="/chat" element={isAuthenticated ? <Chat /> : <Navigate to="/login" />} />
-        <Route path="/search" element={isAuthenticated ? <Search /> : <Navigate to="/login" />} />
-        <Route path="/session" element={isAuthenticated ? <Session /> : <Navigate to="/login" />} />
-        <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/login" />} />
+        <Route path="/training" element={isAuthenticated ? <CollaborativeML /> : <Navigate to="/" />} />
+        <Route path="/chat" element={isAuthenticated ? <Chat /> : <Navigate to="/" />} />
+        <Route path="/search" element={isAuthenticated ? <Search /> : <Navigate to="/" />} />
+        <Route path="/session" element={isAuthenticated ? <Session /> : <Navigate to="/" />} />
+        <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/" />} />
         <Route path="/session/viewresults" element={ <SessionsResults />} />
         <Route path="/forgot/username" element={<ForgotUsername />} />
         <Route path="/forgot/password" element={<ForgotPassword />} />

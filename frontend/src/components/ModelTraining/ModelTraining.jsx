@@ -21,7 +21,7 @@ const ModelTraining = ({userName, selectedDataset}) => {
       console.log('Starting Training Process')
       
 
-      axios.post(`${process.env.REACT_APP_API_URL}/train`,{'collaborators': response.data.collaborators, hyperparameters: {'modelName':selectedModel}},{
+      axios.post(`${process.env.REACT_APP_API_URL}/train`,{'collaborators': response.data.collaborators, hyperparameters: {'modelName':selectedModel, 'datasetName': selectedDataset}},{
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -59,14 +59,11 @@ const ModelTraining = ({userName, selectedDataset}) => {
             className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="LR">Logistic Regression</option>
-            <option value="KNN">K-Nearest Neighbors</option>
-            <option value="SVM">Support Vector Machine</option>
-            <option value="RF">Random Forest</option>
-            <option value="DT">Decision Tree</option>
+            <option value="NN">Neural Network</option>
           </select>
         </div>
       </div>
-      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 , paddingTop: 2}}>
         <Button
           variant="contained"
           onClick={handleStartTraining}

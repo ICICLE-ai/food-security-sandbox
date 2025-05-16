@@ -9,5 +9,6 @@ tapipy==1.2.0
 pandas==2.2.3
 numpy
 scikit-learn
+flask-socketio
 
-tensorflow
+torch
