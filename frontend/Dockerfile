@@ -40,6 +40,11 @@ RUN npm install --legacy-peer-deps
 # Copy the rest of the application code
 COPY . .
 
+# Add environment variable to enable hot reloading
+ENV CHOKIDAR_USEPOLLING=true
+ENV WATCHPACK_POLLING=true
+
 EXPOSE 3000
 
+# Use development mode
 CMD ["npm", "start"] 

@@ -85,7 +85,7 @@ const CollaborativeML = () => {
   );
 
   return (
-    <Box sx={{ mt: 2 }}>
+    <Box sx={{  mx: 'auto', width:'80%', mt: 2 }}>
       <Typography 
         variant="h4" 
         gutterBottom 
@@ -99,8 +99,8 @@ const CollaborativeML = () => {
       >
         Collaborative Machine Learning
       </Typography>
-      <Grid container spacing={2} justifyContent="center">
-        <Grid item xs={12} sm={6}>
+      <Grid container spacing={2} justifyContent="center" >
+        <Grid item xs={12} sm={6} size={6}>
           <Box sx={{ 
             border: '1px solid #ccc', 
             p: 2, 
@@ -117,7 +117,7 @@ const CollaborativeML = () => {
             }
           </Box>
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={6} size={6}>
           <Box sx={{ 
             border: '1px solid #ccc', 
             p: 2, 

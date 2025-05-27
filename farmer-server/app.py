@@ -5,7 +5,6 @@ import os
 from dotenv import load_dotenv
 from jose import jwt
 import datetime
-from tapipy.tapis import Tapis
 import logging
 import traceback
 import pandas as pd
@@ -15,16 +14,11 @@ from multiprocessing import Process, Queue
 import numpy as np
 import pickle
 import threading
-from sklearn import datasets
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 import time
 import tensorflow as tf
-
+import json
 
 # Load environment variables
 load_dotenv()
@@ -48,44 +42,8 @@ def load_PCA_model():
 # Define a simple neural network model (for illustration)
 
 
-def create_model(model_type, input_shape, num_classes):
-    """Creates a TensorFlow model based on the specified type."""
-    if model_type == "dense":
-        return tf.keras.models.Sequential([
-            tf.keras.layers.Input(shape=input_shape),
-            tf.keras.layers.Dense(10, activation='relu'),
-            tf.keras.layers.Dense(num_classes, activation='softmax')
-        ])
-    elif model_type == "conv1d":
-        return tf.keras.models.Sequential([
-            tf.keras.layers.Input(shape=(input_shape[0], 1)),
-            tf.keras.layers.Conv1D(filters=32, kernel_size=3, activation='relu'),
-            tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(num_classes, activation='softmax')
-        ])
-    elif model_type == "lstm":
-        return tf.keras.models.Sequential([
-            tf.keras.layers.Input(shape=(input_shape[0], 1)),
-            tf.keras.layers.LSTM(units=10),
-            tf.keras.layers.Dense(num_classes, activation='softmax')
-        ])
-    else:
-        raise ValueError(f"Unknown model type: {model_type}")
-
 pcaGlobal = load_PCA_model()
 
-def compile_model(model):
-    """Compiles the TensorFlow model."""
-    model.compile(optimizer='adam',
-                  loss='sparse_categorical_crossentropy',
-                  metrics=['accuracy'])
-    return model
-
-def train_client_model(model, client_data, client_labels, epochs=5, batch_size=32):
-    """Trains a local TensorFlow model on client data."""
-    client_data_reshaped = np.expand_dims(client_data, axis=-1) if model.layers[0].input_shape[-1] == 1 and len(client_data.shape) == 2 else client_data
-    model.fit(client_data_reshaped, client_labels, epochs=epochs, batch_size=batch_size, verbose=0)
-    return model.get_weights()
 
 # JWT Configuration
 JWT_SECRET = '6554a9038d6a07bbf3cb17973c13ce2c5f24a71c247210b1f2a8d04cfb8a6907a102064629058d7d89ed4d03a5503fa485e3898346f3baeef1ed510268e680f65d6d7ccaed5ca755586702e55142e1c07e53f5b38b7055b4bb55a70baf0dcdc0d4150347041a1509fc7d12d705ffe4c8e9ff9cb8f9bba5ffd6129128b62e84de4e9087d21d342a10d87a53c59eec2323dcf3a3d2276d62793df37c5e96eacbabc44f1ce1930e7e8ceb97c88f83d75d4fdcb2cebda1ceea7b99294c6d0c4db8fa71d2295b7b73f80813a734447983d47f430d0dddbd90c5ff81a35b46cad10cde33901456e3fe6f7166152366693224a072d7182b40c38bbf04c3ccf76ff3b6db' # Change this in production
@@ -120,6 +78,45 @@ def sandboxed_privacy_enabling(username, metadata, result_queue):
     except Exception as e:
         print(str(e))
         result_queue.put((username, f"error: {str(e)}"))
+
+def create_model(model_type, input_shape, num_classes):
+    """Creates a TensorFlow model based on the specified type."""
+    if model_type == "dense":
+        return tf.keras.models.Sequential([
+            tf.keras.layers.Input(shape=input_shape, dtype='float32'),
+            tf.keras.layers.Dense(256, activation='relu'),
+            tf.keras.layers.Dense(128, activation='relu'),
+            tf.keras.layers.Dense(num_classes, activation='softmax')
+        ])
+    elif model_type == "conv1d":
+        return tf.keras.models.Sequential([
+            tf.keras.layers.Input(shape=(input_shape[0], 1)),
+            tf.keras.layers.Conv1D(filters=32, kernel_size=3, activation='relu'),
+            tf.keras.layers.Flatten(),
+            tf.keras.layers.Dense(num_classes, activation='softmax')
+        ])
+    elif model_type == "lstm":
+        return tf.keras.models.Sequential([
+            tf.keras.layers.Input(shape=(input_shape[0], 1)),
+            tf.keras.layers.LSTM(units=10),
+            tf.keras.layers.Dense(num_classes, activation='softmax')
+        ])
+    else:
+        raise ValueError(f"Unknown model type: {model_type}")
+
+def compile_model(model):
+    """Compiles the TensorFlow model."""
+    model.compile(optimizer='adam',
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['accuracy'])
+    return model
+
+def train_model(model, client_data, client_labels, epochs=5, batch_size=32):
+    """Trains a local TensorFlow model on client data."""
+    
+    model.fit(client_data, client_labels, epochs=epochs, batch_size=batch_size, verbose=0)
+    return [weight.tolist() for weight in model.get_weights()]
+
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -206,7 +203,7 @@ def upload_csv():
             try:
                 # Read the file directly into a DataFrame, setting the first column as sample_id
                 df = pd.read_csv(file, header=0, index_col=0)
-# Check if DataFrame is not empty
+
                 if not df.empty:
                     # Convert DataFrame to dictionary
                     data = df.to_dict(orient="records")
@@ -356,7 +353,7 @@ def load_datasets():
         logging.error(traceback.format_exc())
         return jsonify({'message': 'An error occurred while loading datasets', 'error': str(e)}), 500
 
-@app.route('/api/get_datasets_metdata', methods=['GET'])
+@app.route('/api/get_datasets_metadata', methods=['GET'])
 def get_datasets_metadata():
     try:
         auth_header = request.headers.get('Authorization')
@@ -389,7 +386,10 @@ def get_datasets_metadata():
         
         # Check if the document was found and if it contains the 'metadata' key
         if document and 'metadata' in document:
-            return jsonify({'metdata': document['metadata']})
+            print(str(document['metadata']))
+            df = pd.DataFrame(document['data'], columns=document['metadata'])
+            yTrain = df['label'].values
+            return jsonify({'metadata': document['metadata'], 'num_classes' : len(np.unique(yTrain)), 'classes' : list(np.unique(yTrain))})
         else:
             print(f"Document with id '{datasetID}' not found or does not contain 'metadata'.")
             return None
@@ -406,65 +406,93 @@ def train_local_model():
     userID = receivedData['userID'] # Get userID from the request.
     metadata = receivedData['metadata'] # Get metadata from the request.
     hyperparameters = receivedData['hyperparameters'] # Get hyperparameters from the request.
+    
+    document = db['datasets'][str(userID)].find_one({"metadata": {'$in': metadata}})
+    
+    df = pd.DataFrame(document['data'], columns=document['metadata'])
+    le = LabelEncoder()
+    df['label_encoded'] = le.fit_transform(df['label'])
 
-    #  In a real Federated Learning scenario, you would load
-    #  the user's local data here.  For this example, we'll use the
-    #  entire iris dataset, but you might have a dictionary mapping
-    #  user_id to their specific data.
-    #  For example:
-    #  user_data = {
-    #      1: (X_train_user1, y_train_user1),
-    #      2: (X_train_user2, y_train_user2),
-    #      ...
-    #  }
-    #  X_train_local, y_train_local = user_data.get(user_id, (X_train, y_train)) # default to the whole dataset
-
-    # iris = datasets.load_iris()
-    # X = iris.data          # Features (sepal and petal measurements)
-    # y = iris.target        # Labels (species)
-    datasetCollection = db['datasets']  
-    userDatasetCollection = datasetCollection[userID]
-    document = userDatasetCollection.find_one({"metadata": ObjectId(str(metadata))})
-    # Check if the document was found and if it contains the 'metadata' key
-    if document and 'metadata' in document:
-
-    # Optional: Convert to a DataFrame for better visualization
-    df = pd.DataFrame(X, columns=iris.feature_names)
-    df['target'] = y
-
-    # Step 2: Split the data (e.g., 80% train, 20% test)
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.5
-    )
-  
-    model = models[hyperparameters['modelName']]  # Increased max_iter for convergence
-    weights = None
-    intercept = None
-    if hyperparameters['modelName'] == 'NN':
-        optimizer = optim.Adam(model.parameters(), lr=0.001)
-        criterion = nn.CrossEntropyLoss()
-        # Train the model locally
-        weights = train_nn_model(model, X_train, y_train, optimizer, criterion).numpy()
-    else:
+    xTrain = df.drop(['label', 'label_encoded'], axis=1).values
+    yTrain = df['label_encoded'].values
 
 
-
-        model.fit(X_train, y_train)  # Train on the full dataset (or user-specific data)
-
-    # Get the model weights (updates).  This is what we send back to Server A.
-    #  For Logistic Regression, this is the coefficients and the intercept.
-        weights = model.coef_.tolist()
-        intercept = model.intercept_.tolist()
-    #  Important:  In a real Federated Learning scenario, you might want to
-    #  send back only the *difference* between the initial model and the
-    #  updated model, to reduce the amount of data being transferred.
+    local_model = create_model('dense', xTrain.shape[1:], len(np.unique(yTrain)))
+    local_model = compile_model(local_model)
+    #local_model.set_weights(global_model.get_weights())
+    local_weights = train_model(local_model, xTrain, yTrain)
 
     end_time = time.time()
     training_time = end_time - start_time
     print(f"Server B: Trained model for user {userID} in {training_time:.4f} seconds.")
 
-    return jsonify({'weights': weights, 'intercept': intercept, 'training_time': training_time, 'userID': userID}) # Include timing
+    return jsonify({'weights': local_weights, 'training_time': training_time, 'userID': userID}) # Include timing
 
+@app.route('/api/predict_eval', methods=['POST'])
+def predict_eval():
+    try:
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({"status": "error", "message": "Invalid token"}), 401
+        
+        token = auth_header.split(' ')[1]
+
+        payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+        
+        # Get stored Tapis token
+        session = db.sessions.find_one({"username": payload['username']})
+        if not session:
+            return jsonify({"status": "error", "message": "Session not found"}), 401
+
+        # Check if Tapis token is expired
+        expires_at = datetime.datetime.fromisoformat(session['tapis_token']['expires_at'])
+        now_utc = datetime.datetime.now(datetime.timezone.utc)
+        
+        if now_utc > expires_at:
+            return jsonify({"status": "error", "message": "Tapis token expired"}), 401
+        
+        user_id = payload['username']
+
+        receivedData = request.get_json()
+
+        model_info = request.get_json()['model_info']
+        eval_data = request.get_json()['eval_data']
+        metadata = np.array(model_info['metadata'])
+        classes = np.array(model_info['classes'])
+        
+        if model_info['modelVisibility'] == 'Public':
+            model_info =  db['models'].find_one({"_id": ObjectId(model_info['_id']['$oid'])})
+
+            local_model = create_model('dense', metadata[:-1].shape, model_info['num_classes'])
+            local_model = compile_model(local_model)
+            print('Setting Weights')
+
+            loaded_weights_as_lists = json.loads(model_info['modelWeights'])
+            loaded_weights_as_ndarrays = [np.array(weight_list) for weight_list in loaded_weights_as_lists]
+            local_model.set_weights(loaded_weights_as_ndarrays)
+            
+            print('Weights Set')
+            
+            eval_data = np.array(json.loads(eval_data))
+
+            # Prediction on multiple samples (a batch)
+            predictions_batch = local_model.predict(eval_data)
+            print(f"\nPredictions for batch (raw output, first 2 rows):\n{predictions_batch[:2]}")
+
+            # Interpretation for multiple samples (for a softmax output)
+            predicted_classes_batch = np.argmax(predictions_batch, axis=1)
+            print(f"Predicted classes for batch: {predicted_classes_batch}")
+
+            return jsonify({'predicted_classes_batch': [classes[idx] for idx in predicted_classes_batch.tolist()]}) 
+
+        else:
+            print('find private model')
+
+
+    except Exception as e:
+        logging.error(f'Unexpected error: {str(e)}')
+        logging.error(traceback.format_exc())
+        return jsonify({'message': 'An error occurred while loading datasets', 'error': str(e)}), 500
 
 
 @app.route('/api/test', methods=['GET'])

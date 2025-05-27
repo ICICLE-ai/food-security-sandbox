@@ -162,7 +162,7 @@ const UploadedDatasets = ({userName, setSelectedDataset, update}) => {
             borderRadius: '4px', 
             padding: 2, 
             position: 'relative', 
-            width: '400px', // Set a width for the modal
+            width: '40%', // Set a width for the modal
             margin: 'auto', // Center the modal
             top: '50%', // Center vertically
             transform: 'translateY(-50%)' // Adjust for vertical centering

@@ -21,9 +21,6 @@ from sklearn import datasets
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 import time
-import torch
-import torch.nn as nn
-import torch.optim as optim
 
 # Load environment variables
 load_dotenv()
@@ -40,6 +37,16 @@ messages_collection = db['messages']
 
 # TACC Configuration
 JWT_SECRET = '6554a9038d6a07bbf3cb17973c13ce2c5f24a71c247210b1f2a8d04cfb8a6907a102064629058d7d89ed4d03a5503fa485e3898346f3baeef1ed510268e680f65d6d7ccaed5ca755586702e55142e1c07e53f5b38b7055b4bb55a70baf0dcdc0d4150347041a1509fc7d12d705ffe4c8e9ff9cb8f9bba5ffd6129128b62e84de4e9087d21d342a10d87a53c59eec2323dcf3a3d2276d62793df37c5e96eacbabc44f1ce1930e7e8ceb97c88f83d75d4fdcb2cebda1ceea7b99294c6d0c4db8fa71d2295b7b73f80813a734447983d47f430d0dddbd90c5ff81a35b46cad10cde33901456e3fe6f7166152366693224a072d7182b40c38bbf04c3ccf76ff3b6db'  # Change this in production
+
+# Convert numpy arrays to lists before JSON serialization
+def convert_numpy_to_list(obj):
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, dict):
+        return {key: convert_numpy_to_list(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_numpy_to_list(item) for item in obj]
+    return obj
 
 def create_jwt_token(username):
     """Create a JWT token for the authenticated user"""
@@ -65,17 +72,13 @@ def send_request_to_train_local_model(user_id, metadata, updates_list, hyperpara
         with lock:
             updates_list.append(None) # Append None to keep the order correct.
 
-def train_local_model(model, client_data, client_labels, epochs=5, batch_size=32):
-    """Trains a local TensorFlow model on client data."""
-    client_data_reshaped = np.expand_dims(client_data, axis=-1) if model.layers[0].input_shape[-1] == 1 and len(client_data.shape) == 2 else client_data
-    model.fit(client_data_reshaped, client_labels, epochs=epochs, batch_size=batch_size, verbose=0)
-    return model.get_weights()
-
 def aggregate_updates(client_updates):
     """Aggregates the model updates from all clients."""
     num_clients = len(client_updates)
-    aggregated_weights = [np.mean([updates[i] for updates in client_updates], axis=0)
-                          for i in range(len(client_updates[0]))]
+    
+    
+    aggregated_weights = [np.mean([updates['weights'][i] for updates in client_updates], axis=0) for i in range(len(client_updates[0]['weights']))]
+    
     return aggregated_weights
 
 def update_global_model(global_model, aggregated_weights):
@@ -89,65 +92,102 @@ def evaluate_model(model, test_data, test_labels):
     _, accuracy = model.evaluate(test_data_reshaped, test_labels, verbose=0)
     return accuracy
 
-
-def start_training_process(collaborators, hyperparameters, token):
+def start_training_process(collaborators, metadata, model_id, hyperparameters, token):
     # data_received = request.get_json()  # Get the JSON data from the request body
     # n_users = int(data_received.get('n'))
-    updates = []
-    threads = []
-    lock = threading.Lock() #  Use a lock for thread-safe access to the updates list.
 
-    print(f"Starting training for {len(collaborators)} users...")
-    start_time = time.time()
-    headers = {
-                "Authorization": f"Bearer {token}",
-                "Content-Type": "application/json"
-                }
-    response = requests.get("http://digitalagriculturesandbox-farmer-server-1:5001/api/load_datasets", headers=headers, params={'datasetId' : selected_DS_ID})
-    print("sad",response)
-    metadata = response.json()['metadata']
+    try:
+        
+        payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+        
+        # Get stored Tapis token
+        session = db.sessions.find_one({"username": payload['username']})
+        if not session:
+            print({"status": "error", "message": "Session not found"}), 401
+
+        # Check if Tapis token is expired
+        expires_at = datetime.datetime.fromisoformat(session['tapis_token']['expires_at'])
+        now_utc = datetime.datetime.now(datetime.timezone.utc)
+        
+        if now_utc > expires_at:
+            print({"status": "error", "message": "Tapis token expired"}), 401
     
-    # Create and start a thread for each user.
-    for user_id in collaborators:
-        thread = threading.Thread(target=send_request_to_train_local_model, args=(user_id, metadata, updates, hyperparameters, lock))
-        threads.append(thread)
-        thread.start()
+        user_id = payload['username']
 
-    # Wait for all threads to complete.
-    for thread in threads:
-        thread.join()
+        client_updates = []
+        threads = []
+        lock = threading.Lock() #  Use a lock for thread-safe access to the updates list.
 
-    end_time = time.time()
-    total_time = end_time - start_time
-    print(f"All training threads completed in {total_time:.4f} seconds.")
-    print(f"Received {len(updates)} updates from Farmer Server.")
+        print(f"Starting training for {len(collaborators)} users...")
+        start_time = time.time()
 
-    # Check for any failed requests (None values in updates list)
-    if None in updates:
-        print("Warning: Some requests to Farmer Server failed.  Aggregation may be incomplete.")
-        #  Remove the None values before proceeding with aggregation
-        updates = [u for u in updates if u is not None]
+        headers = {
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": "application/json"
+                    }
+        # response = requests.get("http://digitalagriculturesandbox-farmer-server-1:5001/api/get_datasets_metadata", headers=headers, params={'datasetId' : hyperparameters['datasetName']})
+        # metadata = response.json()['metadata']
+        # num_classes = response.json()['num_classes']
+        
+        # global_model = create_model('dense', metadata[1:].shape[1:], num_classes)
+        # global_model = compile_model(global_model)
 
+        # Create and start a thread for each user.
+        for collaborator_id in collaborators:
+            thread = threading.Thread(target=send_request_to_train_local_model, args=(collaborator_id, metadata, client_updates, hyperparameters, lock))
+            threads.append(thread)
+            thread.start()
 
-    # Aggregate the updates.
-    if hyperparameters['modelName'] == 'NN':
-        aggregated_weights = federated_averaging(updates)
-        # Save the aggregated model to a file.
-        save_model(aggregated_weights, None)
-    else:
-        aggregated_weights, aggregated_intercept = aggregate_updates(updates)
-        # Save the aggregated model to a file.
-        save_model(aggregated_weights, aggregated_intercept)
-    
-    print({'message': 'Training complete', 'total_time': total_time, 'num_updates': len(updates)}) # Return timing
+        # Wait for all threads to complete.
+        for thread in threads:
+            thread.join()
 
-# Federated Averaging
-def federated_averaging(local_weights_list):
-    # Averaging the weights for each layer
-    global_weights = {}
-    for layer in local_weights_list[0].keys():
-        global_weights[layer] = torch.mean(torch.stack([w[layer] for w in local_weights_list]), dim=0)
-    return global_weights
+        # Check for any failed requests (None values in updates list)
+        if None in client_updates:
+            print("Warning: Some requests to Farmer Server failed.  Aggregation may be incomplete.")
+            #  Remove the None values before proceeding with aggregation
+            client_updates = [u for u in client_updates if u is not None]
+
+        aggregated_weights = aggregate_updates(client_updates)
+        # Parameter server: Update global model
+        # global_model = update_global_model(global_model, aggregated_weights)
+        string_model_weights = json.dumps(convert_numpy_to_list(aggregated_weights))
+
+        # Convert the string ID to a MongoDB ObjectId
+        object_id = ObjectId(model_id)
+        # Use find_one to retrieve the document with the matching _id
+        document = db['models'].find_one({'_id': object_id})
+        new_values = {
+            '$set': {
+                'modelWeights': string_model_weights,
+                'status': 'Done'
+            }
+        }
+        if document:
+            db['models'].update_one({'_id': object_id}, new_values)
+            print('Found public and updated')
+        else:
+            print('Not Found Public', user_id, ' ', model_id)
+            doc = db['models'][user_id].find_one({'_id': object_id})
+            if doc:
+                db['models'][user_id].update_one({'_id': object_id}, new_values)
+                print('Found private and updated')
+            else:
+                print('Not Found Private!')
+        end_time = time.time()
+        total_time = end_time - start_time
+        print(f"All training threads completed in {total_time:.4f} seconds.")
+        print(f"Received {len(client_updates)} updates from Farmer Server.")
+
+        
+
+        
+        print({'message': 'Training complete', 'total_time': total_time, 'num_updates': len(client_updates)}) # Return timing
+
+    except Exception as e:
+        logging.error(f'Unexpected error: {str(e)}')
+        logging.error(traceback.format_exc())
+        print({'message': 'An error occurred while processing the file', 'error': str(e)}), 500
 
 
 @app.route('/api/health', methods=['GET'])
@@ -156,7 +196,7 @@ def health_check():
 
 
 
-@app.route('/start_training', methods=['POST'])
+@app.route('/api/start_training', methods=['POST'])
 def train():
     try:
         auth_header = request.headers.get('Authorization')
@@ -181,7 +221,7 @@ def train():
     
         data_received = request.get_json()  # Get the JSON data from the request body
 
-        thread = threading.Thread(target=start_training_process, args=(data_received.get('collaborators'), data_received.get('hyperparameters'), token))
+        thread = threading.Thread(target=start_training_process, args=(data_received.get('collaborators'), data_received.get('metadata'), data_received.get('model_id'), data_received.get('hyperparameters'), token))
         thread.start()
     
         return jsonify({'message': 'Training process started.'}), 200 # Return timing
