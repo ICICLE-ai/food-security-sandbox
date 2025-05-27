@@ -26,6 +26,7 @@ const ModelRepository = ({userName}) => {
   const [selectedModelInfo, setSelectedModelInfo] = useState(null); // State for selected dataset info
   const [openPlaygroundModal, setOpenPlaygroundModal] = useState(false); // State for modal visibility
   const [evalInputData, setEvalInputData] = useState('');
+  const [evalPredictionOutput, setEvalPredictionOutput] = useState('');
 
   const handleOpenModal = (model) => {
     console.log('modal open')
@@ -43,6 +44,8 @@ const ModelRepository = ({userName}) => {
   };
   const handleClosePlaygroundModal = () => {
     setOpenPlaygroundModal(false); // Close the modal
+    setEvalPredictionOutput(''); // Clear the prediction output
+    setEvalInputData(''); // Clear the input data
   };
 
   const handlePredictButton = () => {
@@ -64,6 +67,7 @@ const ModelRepository = ({userName}) => {
             }
           ).then((response) => {
             console.log('Prediction response:', response.data);
+            setEvalPredictionOutput(response.data.predicted_classes_batch);
           })
         }   
 
@@ -224,9 +228,10 @@ const ModelRepository = ({userName}) => {
               position: 'relative', 
             }}
           >
+          {evalPredictionOutput == '' ? (
+           <>
             <Typography variant="h6">{selectedModelInfo?.modelName}</Typography>
             <Typography>Metadata: {selectedModelInfo?.metadata.join(', ')}</Typography>
-            <>
             <div className='formRow'>
               <label htmlFor="modelSelect" className="labelHeading">
                 Test Data: (Needs to be in 2D format, each row representing a sample.)
@@ -239,14 +244,13 @@ const ModelRepository = ({userName}) => {
                 placeholder='Test Data'
               />
             </div>
-            </>
             <Typography className='modalButtonBox'>
             <Button sx={{
-                            bgcolor: '#1976d2',
-                            color: 'white',
-                            px: 6,
-                            mt: 2,
-                            '&:hover': {
+              bgcolor: '#1976d2',
+              color: 'white',
+              px: 6,
+              mt: 2,
+              '&:hover': {
                               bgcolor: '#1565c0'
                             }
                           }}
@@ -256,6 +260,13 @@ const ModelRepository = ({userName}) => {
                           Predict
             </Button>
             </Typography>
+          </>) : 
+          (
+            <>
+              <Typography variant="h6">Prediction Result:</Typography>
+              <Typography>{evalPredictionOutput?.join(', ')}</Typography>
+            </>
+          )}
           </Box>
         </Box>
       </Modal>

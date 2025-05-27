@@ -481,9 +481,13 @@ def predict_eval():
 
             # Interpretation for multiple samples (for a softmax output)
             predicted_classes_batch = np.argmax(predictions_batch, axis=1)
+            predicted_confidence_batch = [predictions_batch[idx][predicted_classes_batch[idx]] for idx in range(0, len(predicted_classes_batch))]
             print(f"Predicted classes for batch: {predicted_classes_batch}")
-
-            return jsonify({'predicted_classes_batch': [classes[idx] for idx in predicted_classes_batch.tolist()]}) 
+            print(f"Predicted classes for batch: {predicted_confidence_batch}")
+            merged_prediction_output = []
+            for name, weight in zip([classes[idx] for idx in predicted_classes_batch.tolist()], predicted_confidence_batch):
+                merged_prediction_output.append(f"{name} ({weight:0.2f})")
+            return jsonify({'predicted_classes_batch': merged_prediction_output}) 
 
         else:
             print('find private model')
