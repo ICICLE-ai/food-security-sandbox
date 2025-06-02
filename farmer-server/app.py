@@ -491,6 +491,33 @@ def predict_eval():
 
         else:
             print('find private model')
+            model_info =  db['models'][user_id].find_one({"_id": ObjectId(model_info['_id']['$oid'])})
+
+            local_model = create_model('dense', metadata[:-1].shape, model_info['num_classes'])
+            local_model = compile_model(local_model)
+            print('Setting Weights')
+
+            loaded_weights_as_lists = json.loads(model_info['modelWeights'])
+            loaded_weights_as_ndarrays = [np.array(weight_list) for weight_list in loaded_weights_as_lists]
+            local_model.set_weights(loaded_weights_as_ndarrays)
+            
+            print('Weights Set')
+            
+            eval_data = np.array(json.loads(eval_data))
+
+            # Prediction on multiple samples (a batch)
+            predictions_batch = local_model.predict(eval_data)
+            print(f"\nPredictions for batch (raw output, first 2 rows):\n{predictions_batch[:2]}")
+
+            # Interpretation for multiple samples (for a softmax output)
+            predicted_classes_batch = np.argmax(predictions_batch, axis=1)
+            predicted_confidence_batch = [predictions_batch[idx][predicted_classes_batch[idx]] for idx in range(0, len(predicted_classes_batch))]
+            print(f"Predicted classes for batch: {predicted_classes_batch}")
+            print(f"Predicted classes for batch: {predicted_confidence_batch}")
+            merged_prediction_output = []
+            for name, weight in zip([classes[idx] for idx in predicted_classes_batch.tolist()], predicted_confidence_batch):
+                merged_prediction_output.append(f"{name} ({weight:0.2f})")
+            return jsonify({'predicted_classes_batch': merged_prediction_output}) 
 
 
     except Exception as e:

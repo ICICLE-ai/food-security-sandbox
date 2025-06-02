@@ -18,6 +18,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
+import GppMaybeIcon from '@mui/icons-material/GppMaybe';
 import './ModelRepository.css'
 
 const ModelRepository = ({userName}) => {
@@ -25,6 +26,7 @@ const ModelRepository = ({userName}) => {
   const [openModal, setOpenModal] = useState(false); // State for modal visibility
   const [selectedModelInfo, setSelectedModelInfo] = useState(null); // State for selected dataset info
   const [openPlaygroundModal, setOpenPlaygroundModal] = useState(false); // State for modal visibility
+  const [openRiskAnalysisModal, setOpenRiskAnalysisModal] = useState(false); // State for modal visibility
   const [evalInputData, setEvalInputData] = useState('');
   const [evalPredictionOutput, setEvalPredictionOutput] = useState('');
 
@@ -35,17 +37,31 @@ const ModelRepository = ({userName}) => {
   };
   const handleCloseModal = () => {
     setOpenModal(false); // Close the modal
+    setSelectedModelInfo(null); // Set the selected model info
   };
 
   const handleOpenPlaygroundModal = (model) => {
-    console.log('modal open')
-    setSelectedModelInfo(model); // Set the selected dataset info
+    console.log('playground modal open')
+    setSelectedModelInfo(model); // Set the selected model info
     setOpenPlaygroundModal(true); // Open the modal
   };
+
   const handleClosePlaygroundModal = () => {
     setOpenPlaygroundModal(false); // Close the modal
     setEvalPredictionOutput(''); // Clear the prediction output
     setEvalInputData(''); // Clear the input data
+    setSelectedModelInfo(null); // Set the selected model info
+  };
+
+  const handleOpenRiskAnalysisModal = (model) => {
+    console.log('risk analysis modal open')
+    setSelectedModelInfo(model); // Set the selected model info
+    setOpenRiskAnalysisModal(true); // Open the modal
+  };
+
+  const handleCloseRiskAnalysisModal = () => {
+    setOpenRiskAnalysisModal(false); // Close the modal
+    setSelectedModelInfo(null); // Set the selected model info
   };
 
   const handlePredictButton = () => {
@@ -134,30 +150,42 @@ const ModelRepository = ({userName}) => {
                   secondary={`Model Type: ${model.modelType}`}
                 />
 
-                  <ModelVisibilityIcon modelVisibility={model.modelVisibility}/>
-
-                <Button 
+                  <ModelVisibilityIcon modelVisibility={model.modelVisibility} sx={{ minWidth: 'auto', padding: '8px', margin: '0 2px' }}/>
+                  
+                  <Button 
+                      onClick={(event) => {
+                        event.stopPropagation(); // Prevent ListItem onClick
+                        handleOpenModal(model);
+                      }}
+                      sx={{ minWidth: 'auto', padding: '8px', margin: '0 2px' }}
+                    >
+                      <InfoIcon />
+                  </Button>
+                  <Button 
                     onClick={(event) => {
                       event.stopPropagation(); // Prevent ListItem onClick
-                      handleOpenModal(model);
+                      handleOpenRiskAnalysisModal(model);
                     }}
+                    sx={{ minWidth: 'auto', padding: '8px', margin: '0 2px' }}
                   >
-                    <InfoIcon />
-                </Button>
-                <Button 
-                    onClick={(event) => {
-                      event.stopPropagation(); // Prevent ListItem onClick
-                      handleOpenPlaygroundModal(model);
-                    }}
-                  >
-                    <PlayCircleIcon/>
-                </Button>
+                      <GppMaybeIcon sx={{ color: 'red' }} />
+                  </Button>
+                  <Button 
+                      onClick={(event) => {
+                        event.stopPropagation(); // Prevent ListItem onClick
+                        handleOpenPlaygroundModal(model);
+                      }}
+                      sx={{ minWidth: 'auto', padding: '8px', margin: '0 2px' }}
+                    >
+                      <PlayCircleIcon/>
+                  </Button>
               </ListItem>
               {index < models.length - 1 && <Divider variant="inset" component="li" />}
             </React.Fragment>
           ))}
         </List>
       )}
+  {/* Information Modal */}
     <Modal open={openModal} onClose={handleCloseModal}>
         <Box 
           sx={{ 
@@ -193,6 +221,7 @@ const ModelRepository = ({userName}) => {
         </Box>
       </Modal>
 
+  {/* Playground Modal */}
       <Modal open={openPlaygroundModal} onClose={handleClosePlaygroundModal}>
         <Box
           sx={{ 
@@ -268,6 +297,35 @@ const ModelRepository = ({userName}) => {
             </>
           )}
           </Box>
+        </Box>
+      </Modal>
+
+  {/* Risk Analysis Modal */}
+      <Modal open={openRiskAnalysisModal} onClose={handleCloseRiskAnalysisModal}>
+        <Box 
+          sx={{ 
+            bgcolor: 'white', 
+            border: '1px solid black', 
+            borderRadius: '4px', 
+            padding: 2, 
+            position: 'relative', 
+            width: '40%', // Set a width for the modal
+            margin: 'auto', // Center the modal
+            top: '50%', // Center vertically
+            transform: 'translateY(-50%)' // Adjust for vertical centering
+          }}
+        >
+          <Button 
+            onClick={handleCloseRiskAnalysisModal} 
+            sx={{ 
+              position: 'absolute', 
+              top: 8, 
+              right: 8 
+            }}
+          >
+            <CloseIcon />
+          </Button>
+          <Typography variant="h6">Risk Analysis Information Here</Typography>
         </Box>
       </Modal>
 
