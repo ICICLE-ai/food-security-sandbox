@@ -19,6 +19,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import GppMaybeIcon from '@mui/icons-material/GppMaybe';
+import HelpIcon from '@mui/icons-material/Help';
 import './ModelRepository.css'
 
 const ModelRepository = ({userName}) => {
@@ -29,6 +30,14 @@ const ModelRepository = ({userName}) => {
   const [openRiskAnalysisModal, setOpenRiskAnalysisModal] = useState(false); // State for modal visibility
   const [evalInputData, setEvalInputData] = useState('');
   const [evalPredictionOutput, setEvalPredictionOutput] = useState('');
+  const [expandedCategories, setExpandedCategories] = useState({});
+
+  const toggleCategory = (categoryName) => {
+    setExpandedCategories(prevState => ({
+      ...prevState,
+      [categoryName]: !prevState[categoryName]
+    }));
+  };
 
   const handleOpenModal = (model) => {
     console.log('modal open')
@@ -52,6 +61,31 @@ const ModelRepository = ({userName}) => {
     setEvalInputData(''); // Clear the input data
     setSelectedModelInfo(null); // Set the selected model info
   };
+
+  const handleReadmeDownload = (readme) => {
+    const blob = new Blob([readme], { type: 'text/plain;charset=utf-8' });
+
+    // 4. Create a temporary URL for the Blob
+    // URL.createObjectURL creates a DOMString containing a URL representing the object given in the parameter.
+    const url = URL.createObjectURL(blob);
+
+    // 5. Create a temporary <a> (anchor) element
+    const a = document.createElement('a');
+    a.style.display = 'none'; // Hide the link
+    a.href = url; // Set the href to the Blob URL
+    a.download = 'readme.txt'; // Set the download attribute to the desired file name
+
+    // 6. Append the <a> element to the body (necessary for some browsers to trigger click)
+    document.body.appendChild(a);
+
+    // 7. Programmatically click the <a> element to trigger the download
+    a.click();
+
+    // 8. Clean up: Revoke the object URL and remove the <a> element
+    // URL.revokeObjectURL releases the object URL, allowing the browser to free up memory.
+    window.URL.revokeObjectURL(url); 
+    document.body.removeChild(a);
+  }
 
   const handleOpenRiskAnalysisModal = (model) => {
     console.log('risk analysis modal open')
@@ -150,14 +184,24 @@ const ModelRepository = ({userName}) => {
                   secondary={`Model Type: ${model.modelType}`}
                 />
 
-                  <ModelVisibilityIcon modelVisibility={model.modelVisibility} sx={{ minWidth: 'auto', padding: '8px', margin: '0 2px' }}/>
+                  <ModelVisibilityIcon 
+                    modelVisibility={model.modelVisibility} 
+                    sx={{ 
+                      maxWidth: '30px', maxHeight: '30px', minWidth: '30px', minHeight: '30px',
+                      padding: '8px', 
+                      marginRight: '5px' 
+                      }}/>
                   
                   <Button 
                       onClick={(event) => {
                         event.stopPropagation(); // Prevent ListItem onClick
                         handleOpenModal(model);
                       }}
-                      sx={{ minWidth: 'auto', padding: '8px', margin: '0 2px' }}
+                      sx={{ 
+                        maxWidth: '30px', maxHeight: '30px', minWidth: '30px', minHeight: '30px',
+                        padding: '8px', 
+                        margin: '0 2px' 
+                      }}
                     >
                       <InfoIcon />
                   </Button>
@@ -166,7 +210,11 @@ const ModelRepository = ({userName}) => {
                       event.stopPropagation(); // Prevent ListItem onClick
                       handleOpenRiskAnalysisModal(model);
                     }}
-                    sx={{ minWidth: 'auto', padding: '8px', margin: '0 2px' }}
+                    sx={{ 
+                      maxWidth: '30px', maxHeight: '30px', minWidth: '30px', minHeight: '30px',
+                      padding: '8px', 
+                      margin: '0 2px' 
+                    }}
                   >
                       <GppMaybeIcon sx={{ color: 'red' }} />
                   </Button>
@@ -175,7 +223,11 @@ const ModelRepository = ({userName}) => {
                         event.stopPropagation(); // Prevent ListItem onClick
                         handleOpenPlaygroundModal(model);
                       }}
-                      sx={{ minWidth: 'auto', padding: '8px', margin: '0 2px' }}
+                      sx={{ 
+                        maxWidth: '30px', maxHeight: '30px', minWidth: '30px', minHeight: '30px',
+                        padding: '8px', 
+                        margin: '0 2px' 
+                      }}
                     >
                       <PlayCircleIcon/>
                   </Button>
@@ -238,16 +290,44 @@ const ModelRepository = ({userName}) => {
         >
           <Typography  sx={{textAlign: 'center'}} variant="h6">Model Playground</Typography>
           
-          <Button 
-              onClick={handleClosePlaygroundModal} 
-              sx={{ 
-                position: 'absolute', 
-                top: 8, 
-                right: 8 
-              }}
-            >
-              <CloseIcon />
-            </Button>
+          <Box
+            sx={{ 
+              position: 'absolute', 
+              top: 8, 
+              right: 8,
+              minWidth: 'auto',
+              display: 'flex',
+              flexDirection: 'row',
+              ":hover": {
+              bgcolor: "transparent"
+            }
+            }}
+          >
+            { 
+              (selectedModelInfo?.readme != "" && selectedModelInfo?.modelReadme != undefined)?            
+                <Button 
+                  onClick={() => handleReadmeDownload(selectedModelInfo?.modelReadme)} 
+                  sx={{ 
+                    maxWidth: '30px', maxHeight: '30px', minWidth: '30px', minHeight: '30px',
+                  //   "&.MuiButtonBase-root:hover": {
+                  //   bgcolor: "transparent"
+                  // }
+                  }}
+                >
+                  <HelpIcon />
+                </Button>
+                :null
+              }
+            <Button 
+                onClick={handleClosePlaygroundModal} 
+                sx={{ 
+                  maxWidth: '30px', maxHeight: '30px', minWidth: '30px', minHeight: '30px',
+                }}
+              >
+                <CloseIcon />
+              </Button>
+              
+            </Box>
           <Box
             sx={{
               bgcolor: 'white', 
@@ -325,7 +405,38 @@ const ModelRepository = ({userName}) => {
           >
             <CloseIcon />
           </Button>
-          <Typography variant="h6">Risk Analysis Information Here</Typography>
+          <Typography variant="h6">Risk Analysis Information</Typography>
+          <div>
+            {/* Model Logs Section */}
+            <h5 onClick={() => toggleCategory('model_logs')} style={{ cursor: 'pointer' }}>
+              Model Logs {expandedCategories.model_logs ? '▼' : '▶'}
+            </h5>
+            {expandedCategories.model_logs && (
+              <div id= 'modelInfoBox'>
+                {selectedModelInfo?Object.entries(selectedModelInfo?.model_logs).map(([key, value]) => (
+                  <p key={key} id = 'modelInfoItem'>
+                    {key}:{value}
+                  </p>
+                )):<></>}
+              </div>
+            )}
+
+            {/* Model Activity Section */}
+            <h5 onClick={() => toggleCategory('model_activity')} style={{ cursor: 'pointer' }}>
+              Model Activity {expandedCategories.model_activity ? '▼' : '▶'}
+            </h5>
+            {expandedCategories.model_activity && (
+              <div id= 'modelInfoBox'>
+                {selectedModelInfo?Object.entries(selectedModelInfo?.model_activity).map(([key, valueArray]) => {
+                  console.log(valueArray[2]['$date'])
+                  return(
+                    <p key={key} id = 'modelInfoItem'>
+                      {key}: user_id, {valueArray[0]}, qureies: {valueArray[1]}, timestamp: {new Date(valueArray[2]['$date']).toLocaleString()}
+                    </p>
+                )}):<></>}
+              </div>
+            )}
+          </div>
         </Box>
       </Modal>
 

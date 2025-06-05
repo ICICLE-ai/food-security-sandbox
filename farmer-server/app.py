@@ -60,6 +60,7 @@ def sandboxed_privacy_enabling(username, metadata, result_queue):
         user_collection = datasetCollection[username]
         matching_dataset = user_collection.find_one({'metadata': metadata})
         df = pd.DataFrame(matching_dataset['data'])
+        print(df.head())
         x = df.iloc[:, :-1].to_numpy()
         y = df.iloc[:, -1].to_numpy()
         clientPCA = pcaGlobal.transform(x)
@@ -462,7 +463,7 @@ def predict_eval():
         
         if model_info['modelVisibility'] == 'Public':
             model_info =  db['models'].find_one({"_id": ObjectId(model_info['_id']['$oid'])})
-
+            print('Found public and updated')
             local_model = create_model('dense', metadata[:-1].shape, model_info['num_classes'])
             local_model = compile_model(local_model)
             print('Setting Weights')
@@ -474,6 +475,36 @@ def predict_eval():
             print('Weights Set')
             
             eval_data = np.array(json.loads(eval_data))
+            
+            # model_logs = {}
+            # if 'model_logs' in model_info.keys():
+            #     model_logs = model_info['model_logs']
+            #     if user_id in model_logs.keys():
+            #         model_logs[user_id] = model_logs[user_id] + np.size(eval_data, 0)
+            #     else:
+            #         model_logs[user_id] = np.size(eval_data, 0)
+            # else:
+            #     model_logs = {
+            #         user_id:np.size(eval_data, 0)
+            #     }
+            # new_values = {
+            #     '$set': {
+            #         'model_logs': model_logs
+            #     }
+            # }
+            # print(model_logs,str(np.size(eval_data)))
+            # db['models'].update_one({"_id": ObjectId(model_info['_id'])}, new_values)
+
+            db['models'].update_one({"_id": ObjectId(model_info['_id'])}, {
+                '$inc':{
+                    f'model_logs.{user_id}':np.size(eval_data, 0)
+                }
+            })
+            db['models'].update_one({"_id": ObjectId(model_info['_id'])}, {
+                '$push':{
+                    'model_activity':[user_id, np.size(eval_data, 0), datetime.datetime.now(datetime.timezone.utc)]
+                }
+            })
 
             # Prediction on multiple samples (a batch)
             predictions_batch = local_model.predict(eval_data)
@@ -533,7 +564,7 @@ def test():
     metadata_list = ["N", "P", "K", "temperature", "humidity", "ph", "rainfall", "label"]
     doc = userDatasetCollection.find_one({"metadata": metadata_list})
         
-    return str(doc['user_id']), 200
+    return str(metadata_list), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001, debug=True) 

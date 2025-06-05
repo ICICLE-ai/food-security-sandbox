@@ -31,6 +31,8 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 # MongoDB connection
 mongo_uri = os.getenv('MONGODB_URI', 'mongodb://mongodb:27017/digital_agriculture')
+REACT_APP_FARMER_API_URL = os.getenv('REACT_APP_FARMER_API_URL', 'http://digital-agriculture-sandbox-farmer-server-1:5001')
+
 client = MongoClient(mongo_uri)
 db = client.digital_agriculture
 messages_collection = db['messages']
@@ -58,7 +60,7 @@ def create_jwt_token(username):
 
 def send_request_to_train_local_model(user_id, metadata, updates_list, hyperparameters, lock):
     try:
-        response = requests.post(f"http://digitalagriculturesandbox-farmer-server-1:5001/api/trainLocalModel", json={'userID': str(user_id), 'metadata':metadata, "hyperparameters": hyperparameters})
+        response = requests.post(f"{REACT_APP_FARMER_API_URL}/api/trainLocalModel", json={'userID': str(user_id), 'metadata':metadata, "hyperparameters": hyperparameters})
         response.raise_for_status()  # Raise an exception for bad status codes (4xx or 5xx)
         data = response.json()
         print(data['userID'], ' ', data['training_time'])

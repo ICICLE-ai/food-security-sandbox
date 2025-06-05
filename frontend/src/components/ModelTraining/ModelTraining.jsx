@@ -1,6 +1,6 @@
 // web_application/Frontend/src/components/Training/TrainingComponent.jsx
 import React, { useState, useEffect } from 'react';
-import { Box, Button, Typography, Snackbar, Avatar } from '@mui/material';
+import { Box, Button, Typography, Snackbar, Avatar, TextField } from '@mui/material';
 import axios from 'axios';
 import './ModelTraining.css';
 import PersonIcon from '@mui/icons-material/Person';
@@ -10,6 +10,7 @@ const ModelTraining = ({userName, selectedDataset}) => {
   const [trainingLog, setTrainingLog] = useState('');
   const [selectedModel, setSelectedModel] = useState("Dense");
   const [modelName, setModelName] = useState("");
+  const [modelReadme, setModelReadme] = useState("");
   const [modelVisibility, setModelVisibility] = useState("Public");
   const [collaborators, setCollaborators] = useState([]);
   const [selectedCollaborators, setSelectedCollaborators] = useState([]);
@@ -48,7 +49,8 @@ const ModelTraining = ({userName, selectedDataset}) => {
                 'modelName': modelName, 
                 'modelType':selectedModel, 
                 'modelVisibility':modelVisibility, 
-                'datasetName': selectedDataset
+                'datasetName': selectedDataset,
+                'readme': modelReadme
           }
         },
         {
@@ -129,6 +131,21 @@ const ModelTraining = ({userName, selectedDataset}) => {
               <option value="Public">Public</option>
               <option value="Private">Private</option>
             </select>
+          </div>
+          <div  className='formRow'>
+            <label htmlFor="modelSelect" className="labelHeading">
+              Readme (Optional): 
+            </label>
+            <TextField
+              id='multiLineField'
+              hintText="Readme instruction to use the model."
+              placeholder="Readme instruction to use the model."
+              multiline
+              rows={4}
+              variant="outlined"
+              fullWidth
+              onChange={(e) => setModelReadme(e.target.value)}
+            />            
           </div>
           <div className='formRow'>
             <label htmlFor="modelSelect" className="labelHeading">Collaborators:</label>
