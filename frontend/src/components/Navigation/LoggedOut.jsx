@@ -8,10 +8,10 @@ const LoggedOut = () => {
       <Button color="inherit" component={RouterLink} to="/">
         Home
       </Button>
-      <Button color="inherit" component={RouterLink} to="/login">
+      {/* <Button color="inherit" component={RouterLink} to="/">
         Login
-      </Button>
-      <Button color="inherit" component={RouterLink} to="/register">
+      </Button> */}
+      <Button color="inherit" component={RouterLink} onClick={()=>{window.open("https://accounts.tacc.utexas.edu/register", '_blank')}}>
         Register
       </Button>
     </>

@@ -4,7 +4,7 @@ import { TextField, Button, Container, Typography, Box, CircularProgress, Divide
 import axios from 'axios';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import './Login.css';
-
+import tacc_logo from '../../tacc-black.png'
 import loginBG from "../../assets/loginBG.jpg"
 import PropTypes from 'prop-types';
 
@@ -101,7 +101,10 @@ const Login = ({ setIsAuthenticated }) => {
             overflowY: 'auto',
             my: 2,
           }}>
-            <Typography variant="h5" align="center" gutterBottom>Log In using TACC account</Typography>
+            <Typography align="center" gutterBottom>
+              <img src={tacc_logo} alt="My Logo" />
+            </Typography>
+            {/* <Typography variant="h6" align="center" gutterBottom>Log In</Typography> */}
             <form onSubmit={handleLogin}>
               <TextField
                 margin="normal"
@@ -160,7 +163,7 @@ const Login = ({ setIsAuthenticated }) => {
               <Divider sx={{ mb: 1 }}>or</Divider>
               <Button 
                 component={RouterLink}
-                onClick={()=>{navigate("https://accounts.tacc.utexas.edu/forgot_password")}}
+                onClick={()=>{window.open("https://accounts.tacc.utexas.edu/forgot_password", '_blank')}}
                 fullWidth 
                 variant="text" 
                 sx={{ 
@@ -175,7 +178,7 @@ const Login = ({ setIsAuthenticated }) => {
               </Button>
             </form>
             <Divider sx={{ mt: 2, mb: 1 }}>Don&apos;t have an account?</Divider>
-            <WhiteButton component={RouterLink} onClick={()=>{navigate("https://accounts.tacc.utexas.edu/register")}} fullWidth variant="outlined">
+            <WhiteButton component={RouterLink} onClick={()=>{window.open("https://accounts.tacc.utexas.edu/register", '_blank')}} fullWidth variant="outlined">
               Register New Account
             </WhiteButton>
           </Box>
