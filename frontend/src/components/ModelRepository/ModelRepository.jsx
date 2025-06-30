@@ -143,7 +143,6 @@ const ModelRepository = ({userName}) => {
           'Authorization': `Bearer ${localStorage.getItem('tapis_token')}`
           }
         })
-
         var models = [...JSON.parse(responsePublic.data), ...JSON.parse(responsePrivate.data)]
         console.log(models)
         setModels(models); // Set the datasets state with the fetched data
@@ -436,6 +435,17 @@ const ModelRepository = ({userName}) => {
                 )}):<></>:<></>}
               </div>
             )}
+
+            {/* Model Risk Section
+            <h5 onClick={() => toggleCategory('model_risk')} style={{ cursor: 'pointer' }}>
+              Risk Analysis {expandedCategories.model_risk ? '▼' : '▶'}
+            </h5>
+            {expandedCategories?.model_risk && (
+              <div id= 'modelInfoBox'>
+                {selectedModelInfo?selectedModelInfo.mia_attack_acc?
+                  <p>membership inference attack accuracy: {selectedModelInfo.mia_attack_acc}</p>:<></>:<></>}
+              </div>
+            )} */}
           </div>
         </Box>
       </Modal>

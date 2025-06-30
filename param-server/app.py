@@ -21,6 +21,8 @@ from sklearn import datasets
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 import time
+from bson import json_util
+
 
 # Load environment variables
 load_dotenv()
@@ -77,7 +79,6 @@ def send_request_to_train_local_model(user_id, metadata, updates_list, hyperpara
 def aggregate_updates(client_updates):
     """Aggregates the model updates from all clients."""
     num_clients = len(client_updates)
-    
     
     aggregated_weights = [np.mean([updates['weights'][i] for updates in client_updates], axis=0) for i in range(len(client_updates[0]['weights']))]
     
@@ -158,14 +159,14 @@ def start_training_process(collaborators, metadata, model_id, hyperparameters, t
         # Convert the string ID to a MongoDB ObjectId
         object_id = ObjectId(model_id)
         # Use find_one to retrieve the document with the matching _id
-        document = db['models'].find_one({'_id': object_id})
+        model_info = db['models'].find_one({'_id': object_id})
         new_values = {
             '$set': {
                 'modelWeights': string_model_weights,
                 'status': 'Done'
             }
         }
-        if document:
+        if model_info:
             db['models'].update_one({'_id': object_id}, new_values)
             print('Found public and updated')
         else:
@@ -176,6 +177,12 @@ def start_training_process(collaborators, metadata, model_id, hyperparameters, t
                 print('Found private and updated')
             else:
                 print('Not Found Private!')
+        
+        response = requests.post(f"{REACT_APP_FARMER_API_URL}/api/model_risk_analysis", 
+                                headers=headers, 
+                                json={'model_info': json_util.dumps(model_info)})
+        print(response)
+        
         end_time = time.time()
         total_time = end_time - start_time
         print(f"All training threads completed in {total_time:.4f} seconds.")

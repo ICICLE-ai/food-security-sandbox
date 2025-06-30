@@ -20,6 +20,10 @@ import time
 import tensorflow as tf
 import json
 
+from art.attacks.inference.membership_inference import MembershipInferenceBlackBox
+from art.estimators.classification import KerasClassifier
+
+
 # Load environment variables
 load_dotenv()
 
@@ -93,6 +97,7 @@ def sandboxed_privacy_enabling(username, metadata, result_queue):
 
 def create_model(model_type, input_shape, num_classes):
     """Creates a TensorFlow model based on the specified type."""
+    print(num_classes)
     if model_type == "dense":
         return tf.keras.models.Sequential([
             tf.keras.layers.Input(shape=input_shape, dtype='float32'),
@@ -128,6 +133,31 @@ def train_model(model, client_data, client_labels, epochs=5, batch_size=32):
     
     model.fit(client_data, client_labels, epochs=epochs, batch_size=batch_size, verbose=0)
     return [weight.tolist() for weight in model.get_weights()]
+
+def risk_analysis(model,x_train,x_test,y_train,y_test):
+
+    attack_train_ratio = 0.5
+    attack_train_size = int(len(x_train) * attack_train_ratio)
+    attack_test_size = int(len(x_test) * attack_train_ratio)
+    
+    classifier = KerasClassifier(model=model) 
+
+    bb_attack = MembershipInferenceBlackBox(classifier)
+
+    # train attack model
+    bb_attack.fit(x_train[:attack_train_size], y_train[:attack_train_size],
+                x_test[:attack_test_size], y_test[:attack_test_size])
+    # get inferred values
+    inferred_train_bb = bb_attack.infer(x_train[attack_train_size:], y_train[attack_train_size:])
+    inferred_test_bb = bb_attack.infer(x_test[attack_test_size:], y_test[attack_test_size:])
+    # check accuracy
+    train_acc = np.sum(inferred_train_bb) / len(inferred_train_bb)
+    test_acc = 1 - (np.sum(inferred_test_bb) / len(inferred_test_bb))
+    acc = (train_acc * len(inferred_train_bb) + test_acc * len(inferred_test_bb)) / (len(inferred_train_bb) + len(inferred_test_bb))
+    print(f"Members Accuracy: {train_acc:.4f}")
+    print(f"Non Members Accuracy {test_acc:.4f}")
+    print(f"Attack Accuracy {acc:.4f}")
+    return acc
 
 
 @app.route('/api/health', methods=['GET'])
@@ -427,11 +457,13 @@ def train_local_model():
     le = LabelEncoder()
     df['label_encoded'] = le.fit_transform(df['label'])
 
-    xTrain = df.drop(['label', 'label_encoded'], axis=1).values
-    yTrain = df['label_encoded'].values
+    X = df.drop(['label', 'label_encoded'], axis=1).values
+    y = df['label_encoded'].values
 
+    xTrain, X_test, yTrain, y_test = train_test_split(
+    X, y, test_size=0.33, random_state=42)
 
-    local_model = create_model('dense', xTrain.shape[1:], len(np.unique(yTrain)))
+    local_model = create_model('dense', xTrain.shape[1:], len(np.unique(y)))
     local_model = compile_model(local_model)
     #local_model.set_weights(global_model.get_weights())
     local_weights = train_model(local_model, xTrain, yTrain)
@@ -441,6 +473,106 @@ def train_local_model():
     print(f"Server B: Trained model for user {userID} in {training_time:.4f} seconds.")
 
     return jsonify({'weights': local_weights, 'training_time': training_time, 'userID': userID}) # Include timing
+
+@app.route('/api/model_risk_analysis', methods=['POST'])
+def model_risk_analysis():
+    try:    
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({"status": "error", "message": "Invalid token"}), 401
+        
+        token = auth_header.split(' ')[1]
+
+        payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+        
+        # Get stored Tapis token
+        session = db.sessions.find_one({"username": payload['username']})
+        if not session:
+            return jsonify({"status": "error", "message": "Session not found"}), 401
+
+        # Check if Tapis token is expired
+        expires_at = datetime.datetime.fromisoformat(session['tapis_token']['expires_at'])
+        now_utc = datetime.datetime.now(datetime.timezone.utc)
+        
+        if now_utc > expires_at:
+            return jsonify({"status": "error", "message": "Tapis token expired"}), 401
+        
+        user_id = payload['username']
+
+        model_info = json.loads(request.get_json()['model_info'])
+        metadata = np.array(model_info['metadata'])
+        classes = np.array(model_info['classes'])
+
+        start_time = time.time()
+        
+        document = db['datasets'][str(user_id)].find_one({"metadata": {'$in': metadata.tolist()}})
+        
+        df = pd.DataFrame(document['data'], columns=document['metadata'])
+        le = LabelEncoder()
+        df['label_encoded'] = le.fit_transform(df['label'])
+
+        X = df.drop(['label', 'label_encoded'], axis=1).values
+        y = df['label_encoded'].values
+
+        xT_rain, X_test, yTrain, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+        
+
+        
+        if model_info['modelVisibility'] == 'Public':
+            model_info =  db['models'].find_one({"_id": ObjectId(model_info['_id']['$oid'])})
+            print('Found public and updated')
+            local_model = create_model('dense', metadata[:-1].shape, model_info['num_classes'])
+            local_model = compile_model(local_model)
+            print('Setting Weights')
+
+            loaded_weights_as_lists = json.loads(model_info['modelWeights'])
+            loaded_weights_as_ndarrays = [np.array(weight_list) for weight_list in loaded_weights_as_lists]
+            local_model.set_weights(loaded_weights_as_ndarrays)
+            
+            print('Weights Set')
+            
+            
+            acc = risk_analysis(local_model,xT_rain, X_test, yTrain, y_test)
+
+            db['models'].update_one({"_id": ObjectId(model_info['_id'])}, {
+                '$set':{
+                    f'mia_attack_acc':float(acc)
+                }
+            })
+            
+            return jsonify({'Attack Accuracy': acc}) 
+
+        else:
+            print('find private model')
+            model_info =  db['models'][user_id].find_one({"_id": ObjectId(model_info['_id']['$oid'])})
+
+            local_model = create_model('dense', metadata[:-1].shape, model_info['num_classes'])
+            local_model = compile_model(local_model)
+            print('Setting Weights')
+
+            loaded_weights_as_lists = json.loads(model_info['modelWeights'])
+            loaded_weights_as_ndarrays = [np.array(weight_list) for weight_list in loaded_weights_as_lists]
+            local_model.set_weights(loaded_weights_as_ndarrays)
+            
+            print('Weights Set')
+            
+            acc = risk_analysis(local_model,xT_rain, X_test, yTrain, y_test)
+
+            db['models'].update_one({"_id": ObjectId(model_info['_id'])}, {
+                '$set':{
+                    f'mia_attack_acc':float(acc)
+                }
+            })
+            
+            return jsonify({'Attack Accuracy': acc}) 
+
+
+
+    except Exception as e:
+        logging.error(f'Unexpected error: {str(e)}')
+        logging.error(traceback.format_exc())
+        return jsonify({'message': 'An error occurred while loading datasets', 'error': str(e)}), 500
+
 
 @app.route('/api/predict_eval', methods=['POST'])
 def predict_eval():
