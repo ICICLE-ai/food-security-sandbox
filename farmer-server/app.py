@@ -54,26 +54,37 @@ def calculateSensitivities(df):
     sens.append(max(abs(df[col].max() - df[col].min()), 1))
   return sens
 
+def diamension_check(x):
+    if x.shape[1] == 7:
+        return x
+    elif x.shape[1] > 7:
+        return x[:, :7]
+    else:  # x.shape[1] < 7
+        padding = np.zeros((x.shape[0], 7 - x.shape[1]))
+        return np.hstack((x, padding))
+
 def sandboxed_privacy_enabling(username, metadata, result_queue):
     try:
         datasetCollection = db['datasets']  
         user_collection = datasetCollection[username]
         matching_dataset = user_collection.find_one({'metadata': metadata})
+        if(matching_dataset == None):
+            result_queue.put((username, None, None))
+            return
         df = pd.DataFrame(matching_dataset['data'])
-        print(df.head())
-        x = df.iloc[:, :-1].to_numpy()
+        x = diamension_check(df.iloc[:, :-1].to_numpy())
         y = df.iloc[:, -1].to_numpy()
         clientPCA = pcaGlobal.transform(x)
-        noisy_X = np.zeros_like(x, dtype=float)
-        sen = np.array(calculateSensitivities(pd.DataFrame(x)))
+        noisy_X = np.zeros_like(clientPCA, dtype=float)
+        sen = np.array(calculateSensitivities(pd.DataFrame(clientPCA)))
         esps = np.array([epsilon/len(sen)]*len(sen))
         scales = sen / esps
         # Add Laplace noise to each column of PCA data
-        for i in range(x.shape[1]):
+        for i in range(clientPCA.shape[1]):
             # Generate Laplace noise
-            noise = np.random.laplace(0, scales[i], size=x.shape[0])
+            noise = np.random.laplace(0, scales[i], size=clientPCA.shape[0])
             # Add noise to the column
-            noisy_X[:, i] = x[:, i] + noise
+            noisy_X[:, i] = clientPCA[:, i] + noise
 
         result_queue.put((username, noisy_X, y))
     except Exception as e:
@@ -341,6 +352,8 @@ def load_datasets():
             
             while not result_queue.empty():
                 farmer_id, noisyX, noisyY = result_queue.get()
+                if noisyX is None and noisyY is None:
+                    continue
                 results[farmer_id] = {"noisyX":noisyX.tolist(), "noisyY" : noisyY.tolist()}
 
             return jsonify(results)

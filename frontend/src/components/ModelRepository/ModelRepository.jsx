@@ -413,11 +413,11 @@ const ModelRepository = ({userName}) => {
             </h5>
             {expandedCategories.model_logs && (
               <div id= 'modelInfoBox'>
-                {selectedModelInfo?Object.entries(selectedModelInfo?.model_logs).map(([key, value]) => (
+                {selectedModelInfo?selectedModelInfo.model_logs?Object.entries(selectedModelInfo?.model_logs).map(([key, value]) => (
                   <p key={key} id = 'modelInfoItem'>
                     {key}:{value}
                   </p>
-                )):<></>}
+                )):<></>:<></>}
               </div>
             )}
 
@@ -425,15 +425,15 @@ const ModelRepository = ({userName}) => {
             <h5 onClick={() => toggleCategory('model_activity')} style={{ cursor: 'pointer' }}>
               Model Activity {expandedCategories.model_activity ? '▼' : '▶'}
             </h5>
-            {expandedCategories.model_activity && (
+            {expandedCategories?.model_activity && (
               <div id= 'modelInfoBox'>
-                {selectedModelInfo?Object.entries(selectedModelInfo?.model_activity).map(([key, valueArray]) => {
+                {selectedModelInfo?selectedModelInfo.model_activity?Object.entries(selectedModelInfo?.model_activity).map(([key, valueArray]) => {
                   console.log(valueArray[2]['$date'])
                   return(
                     <p key={key} id = 'modelInfoItem'>
                       {key}: user_id, {valueArray[0]}, qureies: {valueArray[1]}, timestamp: {new Date(valueArray[2]['$date']).toLocaleString()}
                     </p>
-                )}):<></>}
+                )}):<></>:<></>}
               </div>
             )}
           </div>
