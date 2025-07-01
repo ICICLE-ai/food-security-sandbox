@@ -363,7 +363,7 @@ def load_datasets():
             # Get a list of all collection names in the database
             
             all_users = [doc['username'] for doc in db['sessions'] .find()]
-
+            print(all_users)
             result_queue = Queue()
             processes = []
 
@@ -540,7 +540,7 @@ def model_risk_analysis():
                 }
             })
             
-            return jsonify({'Attack Accuracy': acc}) 
+            return jsonify({'Attack Accuracy': float(acc)}) 
 
         else:
             print('find private model')

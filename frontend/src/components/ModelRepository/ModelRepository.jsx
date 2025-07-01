@@ -416,7 +416,7 @@ const ModelRepository = ({userName}) => {
                   <p key={key} id = 'modelInfoItem'>
                     {key}:{value}
                   </p>
-                )):<></>:<></>}
+                )):<p>No Information Available</p>:<p>No Information Available</p>}
               </div>
             )}
 
@@ -432,20 +432,20 @@ const ModelRepository = ({userName}) => {
                     <p key={key} id = 'modelInfoItem'>
                       {key}: user_id, {valueArray[0]}, qureies: {valueArray[1]}, timestamp: {new Date(valueArray[2]['$date']).toLocaleString()}
                     </p>
-                )}):<></>:<></>}
+                )}):<p>No Information Available</p>:<p>No Information Available</p>}
               </div>
             )}
 
-            {/* Model Risk Section
+            {/* Model Risk Section */}
             <h5 onClick={() => toggleCategory('model_risk')} style={{ cursor: 'pointer' }}>
               Risk Analysis {expandedCategories.model_risk ? '▼' : '▶'}
             </h5>
             {expandedCategories?.model_risk && (
               <div id= 'modelInfoBox'>
                 {selectedModelInfo?selectedModelInfo.mia_attack_acc?
-                  <p>membership inference attack accuracy: {selectedModelInfo.mia_attack_acc}</p>:<></>:<></>}
+                  <p>membership inference attack accuracy: {selectedModelInfo.mia_attack_acc}</p>:<p>No Information Available</p>:<p>No Information Available</p>}
               </div>
-            )} */}
+            )}
           </div>
         </Box>
       </Modal>
