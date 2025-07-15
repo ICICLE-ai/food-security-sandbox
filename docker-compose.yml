@@ -7,8 +7,8 @@ services:
       - ./frontend:/app
       - frontend_node_modules:/app/node_modules  # Mount named volume
     environment:
-      - REACT_APP_API_URL=http://localhost:5003
-      - REACT_APP_FARMER_API_URL=http://localhost:5001
+      - REACT_APP_API_URL=http://digital-agriculture-sandbox-app-server-1:5003
+      - REACT_APP_FARMER_API_URL=http://digital-agriculture-sandbox-farmer-server-1:5001
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
       - NODE_ENV=development
