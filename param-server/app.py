@@ -22,6 +22,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 import time
 from bson import json_util
+from config import settings
 
 
 # Load environment variables
@@ -33,7 +34,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 # MongoDB connection
 mongo_uri = os.getenv('MONGODB_URI', 'mongodb://mongodb:27017/digital_agriculture')
-REACT_APP_FARMER_API_URL = os.getenv('REACT_APP_FARMER_API_URL', 'http://digital-agriculture-sandbox-farmer-server-1:5001')
+REACT_APP_FARMER_API_URL = os.getenv('REACT_APP_FARMER_API_URL', 'http://localhost:5001')
 
 client = MongoClient(mongo_uri)
 db = client.digital_agriculture
@@ -41,6 +42,22 @@ messages_collection = db['messages']
 
 # TACC Configuration
 JWT_SECRET = '6554a9038d6a07bbf3cb17973c13ce2c5f24a71c247210b1f2a8d04cfb8a6907a102064629058d7d89ed4d03a5503fa485e3898346f3baeef1ed510268e680f65d6d7ccaed5ca755586702e55142e1c07e53f5b38b7055b4bb55a70baf0dcdc0d4150347041a1509fc7d12d705ffe4c8e9ff9cb8f9bba5ffd6129128b62e84de4e9087d21d342a10d87a53c59eec2323dcf3a3d2276d62793df37c5e96eacbabc44f1ce1930e7e8ceb97c88f83d75d4fdcb2cebda1ceea7b99294c6d0c4db8fa71d2295b7b73f80813a734447983d47f430d0dddbd90c5ff81a35b46cad10cde33901456e3fe6f7166152366693224a072d7182b40c38bbf04c3ccf76ff3b6db'  # Change this in production
+
+def get_username(token):
+    """
+    Validate a Tapis JWT, `token`, and resolve it to a username.
+    """
+    headers = {'Content-Type': 'text/html'}
+    # call the userinfo endpoint
+    url = f"{settings.tapis_base_url}/v3/oauth2/userinfo"
+    headers = {'X-Tapis-Token': token}
+    try:
+        rsp = requests.get(url, headers=headers)
+        rsp.raise_for_status()
+        username = rsp.json()['result']['username']
+    except Exception as e:
+        raise Exception(f"Error looking up token info; debug: {e}")
+    return username
 
 # Convert numpy arrays to lists before JSON serialization
 def convert_numpy_to_list(obj):
@@ -60,9 +77,13 @@ def create_jwt_token(username):
     }
     return jwt.encode(payload, JWT_SECRET, algorithm='HS256')
 
-def send_request_to_train_local_model(user_id, metadata, updates_list, hyperparameters, lock):
+def send_request_to_train_local_model(token, user_id, metadata, updates_list, hyperparameters, lock):
     try:
-        response = requests.post(f"{REACT_APP_FARMER_API_URL}/api/trainLocalModel", json={'userID': str(user_id), 'metadata':metadata, "hyperparameters": hyperparameters})
+        headers = {
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": "application/json"
+                    }
+        response = requests.post(f"{REACT_APP_FARMER_API_URL}/api/trainLocalModel", headers=headers, json={'userID': str(user_id), 'metadata':metadata, "hyperparameters": hyperparameters})
         response.raise_for_status()  # Raise an exception for bad status codes (4xx or 5xx)
         data = response.json()
         print(data['userID'], ' ', data['training_time'])
@@ -79,7 +100,7 @@ def send_request_to_train_local_model(user_id, metadata, updates_list, hyperpara
 def aggregate_updates(client_updates):
     """Aggregates the model updates from all clients."""
     num_clients = len(client_updates)
-    
+    print(client_updates)
     aggregated_weights = [np.mean([updates['weights'][i] for updates in client_updates], axis=0) for i in range(len(client_updates[0]['weights']))]
     
     return aggregated_weights
@@ -101,21 +122,22 @@ def start_training_process(collaborators, metadata, model_id, hyperparameters, t
 
     try:
         
-        payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
-        
+        username = get_username(token)
+
         # Get stored Tapis token
-        session = db.sessions.find_one({"username": payload['username']})
+        session = db.sessions.find_one({"username": username})
         if not session:
-            print({"status": "error", "message": "Session not found"}), 401
+            return jsonify({"status": "error", "message": "Session not found"}), 401
 
         # Check if Tapis token is expired
         expires_at = datetime.datetime.fromisoformat(session['tapis_token']['expires_at'])
         now_utc = datetime.datetime.now(datetime.timezone.utc)
         
         if now_utc > expires_at:
-            print({"status": "error", "message": "Tapis token expired"}), 401
+            return jsonify({"status": "error", "message": "Tapis token expired"}), 401
+        
+        user_id = username
     
-        user_id = payload['username']
 
         client_updates = []
         threads = []
@@ -128,16 +150,10 @@ def start_training_process(collaborators, metadata, model_id, hyperparameters, t
                     "Authorization": f"Bearer {token}",
                     "Content-Type": "application/json"
                     }
-        # response = requests.get("http://digitalagriculturesandbox-farmer-server-1:5001/api/get_datasets_metadata", headers=headers, params={'datasetId' : hyperparameters['datasetName']})
-        # metadata = response.json()['metadata']
-        # num_classes = response.json()['num_classes']
-        
-        # global_model = create_model('dense', metadata[1:].shape[1:], num_classes)
-        # global_model = compile_model(global_model)
 
         # Create and start a thread for each user.
         for collaborator_id in collaborators:
-            thread = threading.Thread(target=send_request_to_train_local_model, args=(collaborator_id, metadata, client_updates, hyperparameters, lock))
+            thread = threading.Thread(target=send_request_to_train_local_model, args=(token, collaborator_id, metadata, client_updates, hyperparameters, lock))
             threads.append(thread)
             thread.start()
 
@@ -203,21 +219,19 @@ def start_training_process(collaborators, metadata, model_id, hyperparameters, t
 def health_check():
     return jsonify({"status": "healthy", "service": "app-server"})
 
-
-
 @app.route('/api/start_training', methods=['POST'])
 def train():
     try:
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
             return jsonify({"status": "error", "message": "Invalid token"}), 401
-        
-        token = auth_header.split(' ')[1]
 
-        payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+        token = auth_header.split(' ')[1]
         
+        username = get_username(token)
+
         # Get stored Tapis token
-        session = db.sessions.find_one({"username": payload['username']})
+        session = db.sessions.find_one({"username": username})
         if not session:
             return jsonify({"status": "error", "message": "Session not found"}), 401
 
@@ -227,6 +241,8 @@ def train():
         
         if now_utc > expires_at:
             return jsonify({"status": "error", "message": "Tapis token expired"}), 401
+        
+        user_id = username
     
         data_received = request.get_json()  # Get the JSON data from the request body
 
@@ -239,9 +255,7 @@ def train():
         logging.error(f'Unexpected error: {str(e)}')
         logging.error(traceback.format_exc())
         return jsonify({'message': 'An error occurred while processing the file', 'error': str(e)}), 500
-
-
-    
+   
 @app.route('/api/test', methods=['GET'])
 def test():
     # Find all messages where user is either sender or receiver

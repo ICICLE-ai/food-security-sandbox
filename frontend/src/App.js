@@ -23,19 +23,31 @@ function App() {
 
 
   useEffect(()=>{
-      axios.get(`${process.env.REACT_APP_API_URL}/api/auth/verify`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('tapis_token')}`
-        }
-      }).then(response => {
-        console.log(response)
+    const params = new URLSearchParams(window.location.search);
+      if (params.get('tapis_token')){
+        const tapis_token = params.get('tapis_token');
+        const username = params.get('username');
+        localStorage.setItem('tapis_token', tapis_token);
+        localStorage.setItem('tapis_username', username);
         setIsAuthenticated(true);
-      })
-      .catch(error => {
-        console.error(error);
-        localStorage.removeItem('tapis_token');
-        localStorage.removeItem('tapis_username');
-      });
+      }
+      else{
+
+        axios.get(`${process.env.REACT_APP_API_URL}/api/auth/verify`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('tapis_token')}`
+          }
+        }).then(response => {
+          console.log(response)
+          setIsAuthenticated(true);
+        })
+        .catch(error => {
+          console.error(error);
+          localStorage.removeItem('tapis_token');
+          localStorage.removeItem('tapis_username');
+          window.location.href = 'http://localhost:5003/api/auth/login';
+        });
+      }
   })
 
 
@@ -72,7 +84,7 @@ function App() {
       </AppBar>
 
       <Routes>
-        <Route path="/" element={isAuthenticated ? <Home /> : <Login setIsAuthenticated={setIsAuthenticated}  />} />
+        <Route path="/" element={isAuthenticated ? <Home /> : <></>} />
         <Route path="/register" element={<NewUser />} />
         <Route path="/training" element={isAuthenticated ? <CollaborativeML /> : <Navigate to="/" />} />
         <Route path="/chat" element={isAuthenticated ? <Chat /> : <Navigate to="/" />} />

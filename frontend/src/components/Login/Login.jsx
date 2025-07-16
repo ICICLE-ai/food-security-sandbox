@@ -26,37 +26,49 @@ const Login = ({ setIsAuthenticated }) => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
- 
-   const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      console.log(process.env.REACT_APP_API_URL);
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/login`, {
-        username,
-        password
-      });
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tapis_token = params.get('tapis_token');
+    const username = params.get('username');
 
-      console.log(response.data.token)
+    if (tapis_token) {
+          localStorage.setItem('authToken', tapis_token);
+          localStorage.setItem('tapis_username', username);
+
+          navigate('/');
+          }
+  }, [navigate]);
+
+   const handleLogin = async (e) => {
+    // e.preventDefault();
+    // setLoading(true);
+    // try {
+    //   console.log(process.env.REACT_APP_API_URL);
+    //   const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/login`, {
+    //     username,
+    //     password
+    //   });
+
+    //   console.log(response.data.token)
       
-      if (response.data.token) {
-        localStorage.setItem('tapis_token', response.data.token);
-        localStorage.setItem('tapis_username', response.data.username);
-        setIsAuthenticated(true);
-        setError('');
-        navigate('/');
-      }
-    } catch (err) {
-      console.log(err)
-      setError(err.response?.data?.message || 'Login failed');
-    } finally {
-      setLoading(false);
-    }
+    //   if (response.data.token) {
+    //     localStorage.setItem('tapis_token', response.data.token);
+    //     localStorage.setItem('tapis_username', response.data.username);
+    //     setIsAuthenticated(true);
+    //     setError('');
+    //     navigate('/');
+    //   }
+    // } catch (err) {
+    //   console.log(err)
+    //   setError(err.response?.data?.message || 'Login failed');
+    // } finally {
+    //   setLoading(false);
+    // }
   };
  
 
   const handleTogglePasswordVisibility = () => {
-    setShowPassword((prevShowPassword) => !prevShowPassword);
+    // setShowPassword((prevShowPassword) => !prevShowPassword);
   };
 
   return (
@@ -188,8 +200,8 @@ const Login = ({ setIsAuthenticated }) => {
   );
 };
 
-Login.propTypes = {
-  onLogin: PropTypes.func.isRequired
-};
+// Login.propTypes = {
+//   onLogin: PropTypes.func.isRequired
+// };
 
 export default Login;

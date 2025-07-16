@@ -19,6 +19,8 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 import time
 import tensorflow as tf
 import json
+import requests
+from config import settings
 
 from art.attacks.inference.membership_inference import MembershipInferenceBlackBox
 from art.estimators.classification import KerasClassifier
@@ -42,9 +44,6 @@ def load_PCA_model():
         loaded_pca = pickle.load(file)
 
     return loaded_pca
-
-# Define a simple neural network model (for illustration)
-
 
 pcaGlobal = load_PCA_model()
 
@@ -159,6 +158,21 @@ def risk_analysis(model,x_train,x_test,y_train,y_test):
     print(f"Attack Accuracy {acc:.4f}")
     return acc
 
+def get_username(token):
+    """
+    Validate a Tapis JWT, `token`, and resolve it to a username.
+    """
+    headers = {'Content-Type': 'text/html'}
+    # call the userinfo endpoint
+    url = f"{settings.tapis_base_url}/v3/oauth2/userinfo"
+    headers = {'X-Tapis-Token': token}
+    try:
+        rsp = requests.get(url, headers=headers)
+        rsp.raise_for_status()
+        username = rsp.json()['result']['username']
+    except Exception as e:
+        raise Exception(f"Error looking up token info; debug: {e}")
+    return username
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -171,13 +185,13 @@ def get_user_datasets():
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
             return jsonify({"status": "error", "message": "Invalid token"}), 401
-        
-        token = auth_header.split(' ')[1]
 
-        payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+        token = auth_header.split(' ')[1]
         
+        username = get_username(token)
+
         # Get stored Tapis token
-        session = db.sessions.find_one({"username": payload['username']})
+        session = db.sessions.find_one({"username": username})
         if not session:
             return jsonify({"status": "error", "message": "Session not found"}), 401
 
@@ -188,7 +202,7 @@ def get_user_datasets():
         if now_utc > expires_at:
             return jsonify({"status": "error", "message": "Tapis token expired"}), 401
         
-        user_id = payload['username']
+        user_id = username
         # Query the datasets collection for the user's datasets
         datasets = db['datasets'][user_id].find()
 
@@ -205,15 +219,15 @@ def get_user_datasets():
 def upload_csv():
     try:
         auth_header = request.headers.get('Authorization')
-        if not auth_header:
-            logging.error("Authorization header missing")
-            return jsonify({"error": "Authorization header missing"}), 401
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({"status": "error", "message": "Invalid token"}), 401
 
-        token = auth_header.split()[1]
-        payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+        token = auth_header.split(' ')[1]
         
+        username = get_username(token)
+
         # Get stored Tapis token
-        session = db.sessions.find_one({"username": payload['username']})
+        session = db.sessions.find_one({"username": username})
         if not session:
             return jsonify({"status": "error", "message": "Session not found"}), 401
 
@@ -224,7 +238,7 @@ def upload_csv():
         if now_utc > expires_at:
             return jsonify({"status": "error", "message": "Tapis token expired"}), 401
         
-        user_id = payload['username']
+        user_id = username
         # user_id = "TestAccount4"
 
         # Check if the post request has the file part
@@ -283,13 +297,13 @@ def delete_dataset():
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
             return jsonify({"status": "error", "message": "Invalid token"}), 401
-        
-        token = auth_header.split(' ')[1]
 
-        payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+        token = auth_header.split(' ')[1]
         
+        username = get_username(token)
+
         # Get stored Tapis token
-        session = db.sessions.find_one({"username": payload['username']})
+        session = db.sessions.find_one({"username": username})
         if not session:
             return jsonify({"status": "error", "message": "Session not found"}), 401
 
@@ -300,7 +314,7 @@ def delete_dataset():
         if now_utc > expires_at:
             return jsonify({"status": "error", "message": "Tapis token expired"}), 401
         
-        user_id = payload['username']
+        user_id = username
         
         data = request.get_json()  # Get the JSON data from the request body
         datasetID = data.get('datasetId')  # Extract selectedDataset
@@ -332,13 +346,13 @@ def load_datasets():
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
             return jsonify({"status": "error", "message": "Invalid token"}), 401
-        
-        token = auth_header.split(' ')[1]
 
-        payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+        token = auth_header.split(' ')[1]
         
+        username = get_username(token)
+
         # Get stored Tapis token
-        session = db.sessions.find_one({"username": payload['username']})
+        session = db.sessions.find_one({"username": username})
         if not session:
             return jsonify({"status": "error", "message": "Session not found"}), 401
 
@@ -349,7 +363,8 @@ def load_datasets():
         if now_utc > expires_at:
             return jsonify({"status": "error", "message": "Tapis token expired"}), 401
         
-        user_id = payload['username']
+        user_id = username
+        
         data = request.args # Get the JSON data from the request body
         datasetID = data['datasetId']  # Extract selectedDataset
 
@@ -403,13 +418,13 @@ def get_datasets_metadata():
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
             return jsonify({"status": "error", "message": "Invalid token"}), 401
-        
-        token = auth_header.split(' ')[1]
 
-        payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+        token = auth_header.split(' ')[1]
         
+        username = get_username(token)
+
         # Get stored Tapis token
-        session = db.sessions.find_one({"username": payload['username']})
+        session = db.sessions.find_one({"username": username})
         if not session:
             return jsonify({"status": "error", "message": "Session not found"}), 401
 
@@ -420,7 +435,8 @@ def get_datasets_metadata():
         if now_utc > expires_at:
             return jsonify({"status": "error", "message": "Tapis token expired"}), 401
         
-        user_id = payload['username']
+        user_id = username
+        
         data = request.args # Get the JSON data from the request body
         datasetID = data['datasetId']  # Extract selectedDataset
 
@@ -445,48 +461,18 @@ def get_datasets_metadata():
 
 @app.route('/api/trainLocalModel', methods=['POST'])
 def train_local_model():
-    start_time = time.time()
-    receivedData = request.get_json()
-    userID = receivedData['userID'] # Get userID from the request.
-    metadata = receivedData['metadata'] # Get metadata from the request.
-    hyperparameters = receivedData['hyperparameters'] # Get hyperparameters from the request.
-    
-    document = db['datasets'][str(userID)].find_one({"metadata": {'$in': metadata}})
-    
-    df = pd.DataFrame(document['data'], columns=document['metadata'])
-    le = LabelEncoder()
-    df['label_encoded'] = le.fit_transform(df['label'])
-
-    X = df.drop(['label', 'label_encoded'], axis=1).values
-    y = df['label_encoded'].values
-
-    xTrain, X_test, yTrain, y_test = train_test_split(
-    X, y, test_size=0.33, random_state=42)
-
-    local_model = create_model('dense', xTrain.shape[1:], len(np.unique(y)))
-    local_model = compile_model(local_model)
-    #local_model.set_weights(global_model.get_weights())
-    local_weights = train_model(local_model, xTrain, yTrain)
-
-    end_time = time.time()
-    training_time = end_time - start_time
-    print(f"Server B: Trained model for user {userID} in {training_time:.4f} seconds.")
-
-    return jsonify({'weights': local_weights, 'training_time': training_time, 'userID': userID}) # Include timing
-
-@app.route('/api/model_risk_analysis', methods=['POST'])
-def model_risk_analysis():
-    try:    
+    try:
+        start_time = time.time()
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
             return jsonify({"status": "error", "message": "Invalid token"}), 401
-        
-        token = auth_header.split(' ')[1]
 
-        payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+        token = auth_header.split(' ')[1]
         
+        username = get_username(token)
+
         # Get stored Tapis token
-        session = db.sessions.find_one({"username": payload['username']})
+        session = db.sessions.find_one({"username": username})
         if not session:
             return jsonify({"status": "error", "message": "Session not found"}), 401
 
@@ -497,7 +483,66 @@ def model_risk_analysis():
         if now_utc > expires_at:
             return jsonify({"status": "error", "message": "Tapis token expired"}), 401
         
-        user_id = payload['username']
+        user_id = username
+        
+        receivedData = request.get_json()
+        userID = receivedData['userID'] # Get userID from the request.
+        metadata = receivedData['metadata'] # Get metadata from the request.
+        hyperparameters = receivedData['hyperparameters'] # Get hyperparameters from the request.
+        
+        document = db['datasets'][str(userID)].find_one({"metadata": {'$in': metadata}})
+        
+        df = pd.DataFrame(document['data'], columns=document['metadata'])
+        le = LabelEncoder()
+        df['label_encoded'] = le.fit_transform(df['label'])
+
+        X = df.drop(['label', 'label_encoded'], axis=1).values
+        y = df['label_encoded'].values
+
+        xTrain, X_test, yTrain, y_test = train_test_split(
+        X, y, test_size=0.33, random_state=42)
+
+        local_model = create_model('dense', xTrain.shape[1:], len(np.unique(y)))
+        local_model = compile_model(local_model)
+        #local_model.set_weights(global_model.get_weights())
+        local_weights = train_model(local_model, xTrain, yTrain)
+
+        end_time = time.time()
+        training_time = end_time - start_time
+        print(f"Server B: Trained model for user {userID} in {training_time:.4f} seconds.")
+
+        return jsonify({'weights': local_weights, 'training_time': training_time, 'userID': userID}) # Include timing
+    
+    except Exception as e:
+        logging.error(f'Unexpected error: {str(e)}')
+        logging.error(traceback.format_exc())
+        return jsonify({'message': 'An error occurred while loading datasets', 'error': str(e)}), 500
+    
+@app.route('/api/model_risk_analysis', methods=['POST'])
+def model_risk_analysis():
+    try:    
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({"status": "error", "message": "Invalid token"}), 401
+
+        token = auth_header.split(' ')[1]
+        
+        username = get_username(token)
+
+        # Get stored Tapis token
+        session = db.sessions.find_one({"username": username})
+        if not session:
+            return jsonify({"status": "error", "message": "Session not found"}), 401
+
+        # Check if Tapis token is expired
+        expires_at = datetime.datetime.fromisoformat(session['tapis_token']['expires_at'])
+        now_utc = datetime.datetime.now(datetime.timezone.utc)
+        
+        if now_utc > expires_at:
+            return jsonify({"status": "error", "message": "Tapis token expired"}), 401
+        
+        user_id = username
+        
 
         model_info = json.loads(request.get_json()['model_info'])
         metadata = np.array(model_info['metadata'])
@@ -580,13 +625,13 @@ def predict_eval():
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
             return jsonify({"status": "error", "message": "Invalid token"}), 401
-        
-        token = auth_header.split(' ')[1]
 
-        payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+        token = auth_header.split(' ')[1]
         
+        username = get_username(token)
+
         # Get stored Tapis token
-        session = db.sessions.find_one({"username": payload['username']})
+        session = db.sessions.find_one({"username": username})
         if not session:
             return jsonify({"status": "error", "message": "Session not found"}), 401
 
@@ -597,7 +642,8 @@ def predict_eval():
         if now_utc > expires_at:
             return jsonify({"status": "error", "message": "Tapis token expired"}), 401
         
-        user_id = payload['username']
+        user_id = username
+        
 
         receivedData = request.get_json()
 
