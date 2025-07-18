@@ -14,6 +14,7 @@ import Chat from "./components/Chat/Chat";
 import './App.css';
 import axios from 'axios';
 import icicleLogo from "./assets/icicleLogo.png"
+import Loader from './components/Loader/Loader';
 
 function App() {
   const [username, setUsername] = useState('');
@@ -84,7 +85,7 @@ function App() {
       </AppBar>
 
       <Routes>
-        <Route path="/" element={isAuthenticated ? <Home /> : <></>} />
+        <Route path="/" element={isAuthenticated ? <Home /> : <Loader></Loader>} />
         <Route path="/register" element={<NewUser />} />
         <Route path="/training" element={isAuthenticated ? <CollaborativeML /> : <Navigate to="/" />} />
         <Route path="/chat" element={isAuthenticated ? <Chat /> : <Navigate to="/" />} />
