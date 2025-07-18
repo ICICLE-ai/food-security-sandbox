@@ -19,8 +19,9 @@ import axios from 'axios';
 const SimilarFarmers = ({userName, selectedDataset, userID}) => {
   const navigate = useNavigate();
   const [farmers, setFarmers] = useState([]);
-
+  const [identifyFarmersClicked, setIdentifyFarmersClicked] = useState(false);
   const handleFindFarmers = () => {
+    setIdentifyFarmersClicked(true);
     // Simply set the mock data
     const fetchProfiles = async () => {
       try {
@@ -39,12 +40,6 @@ const SimilarFarmers = ({userName, selectedDataset, userID}) => {
     };
 
     fetchProfiles();
-    // setFarmers([
-    //   { id: 1, name: "John Smith", similarity: "90%" },
-    //   { id: 2, name: "Maria Garcia", similarity: "85%" },
-    //   { id: 3, name: "David Johnson", similarity: "82%" },
-    //   { id: 4, name: "Sarah Wilson", similarity: "78%" },
-    // ]);
   };
 
   return (
@@ -62,7 +57,7 @@ const SimilarFarmers = ({userName, selectedDataset, userID}) => {
       </Typography>
 
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
-        <Button
+        {identifyFarmersClicked == false ?<Button
           variant="contained"
           onClick={handleFindFarmers}
           sx={{ 
@@ -77,7 +72,8 @@ const SimilarFarmers = ({userName, selectedDataset, userID}) => {
           }}
         >
           Find Similar Farmers
-        </Button>
+        </Button>:<></>
+        }
       </Box>
 
       {farmers.length > 0 && (
@@ -113,7 +109,16 @@ const SimilarFarmers = ({userName, selectedDataset, userID}) => {
           ))}
         </List>
       )}
-
+      {(farmers.length == 0 && !identifyFarmersClicked) && (
+        <Box sx={{ width: '100%', bgcolor: 'background.paper', textAlign: 'center', justifyContent:'center', alignItems: 'center' }}>
+        <h3 style={{color:'Green'}}>Click Identify Similar Farmer Identified.</h3>
+        </Box>
+        )}
+      {(farmers.length == 0 && identifyFarmersClicked) && (
+        <Box sx={{ width: '100%', bgcolor: 'background.paper', textAlign: 'center', justifyContent:'center', alignItems: 'center' }}>
+        <h3 style={{color:'red'}}>No Similar Farmer Identified.</h3>
+        </Box>
+        )}
     </Box>
   );
 };

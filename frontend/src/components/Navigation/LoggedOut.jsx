@@ -11,9 +11,9 @@ const LoggedOut = () => {
       {/* <Button color="inherit" component={RouterLink} to="/">
         Login
       </Button> */}
-      <Button color="inherit" component={RouterLink} onClick={()=>{window.open("https://accounts.tacc.utexas.edu/register", '_blank')}}>
+      {/* <Button color="inherit" component={RouterLink} onClick={()=>{window.open("https://accounts.tacc.utexas.edu/register", '_blank')}}>
         Register
-      </Button>
+      </Button> */}
     </>
   );
 };
