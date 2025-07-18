@@ -16,9 +16,8 @@ The Digital Agriculture Sandbox is a comprehensive web application that enables 
 
 ## Tags
 
-**Digital-Agriculture** 
-
 **PADI** 
+**Digital-Agriculture** 
 
 ## License
 
