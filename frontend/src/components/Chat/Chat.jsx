@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './Chat.css';
 import { useLocation } from 'react-router-dom';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 function ChatApp() {
   const location = useLocation();
@@ -115,6 +115,10 @@ const ChatBox = (({ senderID, receiverID, setLoading }) => {
           receiverID,
           message,
           timestamp
+        },{
+            headers: {
+            'Authorization': `Bearer ${localStorage.getItem('tapis_token')}`
+          }
         })
         .then((response) => {
           setMessages([...messages, { senderID, receiverID, message, timestamp }]);

@@ -295,11 +295,12 @@ def upload_csv():
 def delete_dataset():
     try:
         auth_header = request.headers.get('Authorization')
+        print('auth_header',auth_header)
         if not auth_header or not auth_header.startswith('Bearer '):
             return jsonify({"status": "error", "message": "Invalid token"}), 401
 
         token = auth_header.split(' ')[1]
-        
+         
         username = get_username(token)
 
         # Get stored Tapis token
@@ -315,9 +316,8 @@ def delete_dataset():
             return jsonify({"status": "error", "message": "Tapis token expired"}), 401
         
         user_id = username
-        
-        data = request.get_json()  # Get the JSON data from the request body
-        datasetID = data.get('datasetId')  # Extract selectedDataset
+        print(user_id)
+        datasetID = request.args.get('datasetId')  # Extract selectedDataset
 
         print(datasetID)
 

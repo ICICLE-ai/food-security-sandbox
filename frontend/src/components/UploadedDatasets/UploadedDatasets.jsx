@@ -38,12 +38,16 @@ const UploadedDatasets = ({userName, setSelectedDataset, update}) => {
   
     try {
       
-      const response = await axios.get(`${process.env.REACT_APP_FARMER_API_URL}/api/delete_dataset/`, {datasetId}, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('tapis_token')}`
+      const response = await axios.get(
+        `${process.env.REACT_APP_FARMER_API_URL}/api/delete_dataset`,
+        {
+          params: { datasetId },
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('tapis_token')}`
+          }
         }
-      });
-  
+      );
+      
       if (response.status === 200) {
         // Update the local state to remove the deleted dataset
         setDatasets(prevDatasets => 

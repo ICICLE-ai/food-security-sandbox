@@ -1,14 +1,9 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AppBar, Toolbar, Typography } from "@mui/material";
-import { Home, Upload, Search, Session, NewUser, Login } from "./components";
-import BrightnessHighIcon from '@mui/icons-material/BrightnessHigh';
+import { Home} from "./components";
 import LoggedIn from './components/Navigation/LoggedIn';
 import LoggedOut from './components/Navigation/LoggedOut';
-import ForgotUsername from './components/Forgot/ForgotUsername'; 
-import ForgotPassword from './components/Forgot/ForgotPassword'; 
-import SessionsResults from "./components/Session/SessionsResults";
-import Profile from "./components/Profile/Profile";
 import CollaborativeML from './components/CollaborativeML/CollaborativeML';
 import Chat from "./components/Chat/Chat";
 import './App.css';
@@ -17,9 +12,6 @@ import icicleLogo from "./assets/icicleLogo.png"
 import Loader from './components/Loader/Loader';
 
 function App() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
 
@@ -86,15 +78,8 @@ function App() {
 
       <Routes>
         <Route path="/" element={isAuthenticated ? <Home /> : <Loader></Loader>} />
-        <Route path="/register" element={<NewUser />} />
         <Route path="/training" element={isAuthenticated ? <CollaborativeML /> : <Navigate to="/" />} />
         <Route path="/chat" element={isAuthenticated ? <Chat /> : <Navigate to="/" />} />
-        <Route path="/search" element={isAuthenticated ? <Search /> : <Navigate to="/" />} />
-        <Route path="/session" element={isAuthenticated ? <Session /> : <Navigate to="/" />} />
-        <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/" />} />
-        <Route path="/session/viewresults" element={ <SessionsResults />} />
-        <Route path="/forgot/username" element={<ForgotUsername />} />
-        <Route path="/forgot/password" element={<ForgotPassword />} />
       </Routes>
     </Router>
     

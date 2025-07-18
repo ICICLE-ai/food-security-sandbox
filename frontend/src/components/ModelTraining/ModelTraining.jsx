@@ -14,6 +14,7 @@ const ModelTraining = ({userName, selectedDataset}) => {
   const [modelVisibility, setModelVisibility] = useState("Public");
   const [collaborators, setCollaborators] = useState([]);
   const [selectedCollaborators, setSelectedCollaborators] = useState([]);
+  const [collaborationStatus, setCollaborationStatus] = useState(false);
   const token = localStorage.getItem('tapis_token');
 
   useEffect(() => {
@@ -87,7 +88,10 @@ const ModelTraining = ({userName, selectedDataset}) => {
       >
         Model Training
       </Typography>
-      {trainingLog === "" ? (
+      {collaborators.length === 0? (<>
+        <h3 style={{ color: 'red', textAlign: 'center' }}>No Collaborators Found</h3>
+      </>):
+      trainingLog === "" ? (
         <>
       <div className="mb-4 p-4 border rounded-lg bg-white shadow-sm">
         <h3 className="text-lg font-semibold mb-3">Training Parameters</h3>

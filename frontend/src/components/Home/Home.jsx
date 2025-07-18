@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Typography, List, ListItem, ListItemIcon, Box, Grid, Snackbar, CircularProgress } from '@mui/material';
 import UploadForm from '../Upload/Upload';
-import SearchPage from '../Search/Search';
 import SimilarFarmers from '../SimilarFarmers/SimilarFarmers';
 import UploadedDatasets from '../UploadedDatasets/UploadedDatasets';
-import axios from 'axios';
 import FunctionsIcon from '@mui/icons-material/Functions';
 
 const HomePage = () => {
