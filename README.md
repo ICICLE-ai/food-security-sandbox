@@ -24,7 +24,7 @@ The Digital Agriculture Sandbox is a comprehensive web application that enables 
 
 MIT License
 
-Copyright (c) 2024 Digital Agriculture Sandbox
+Copyright (c) 2025 Digital Agriculture Sandbox
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## References
