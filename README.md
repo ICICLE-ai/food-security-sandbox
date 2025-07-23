@@ -1,10 +1,10 @@
-# Digital Agriculture Sandbox
+# Food Security Sandbox
 
 A collaborative machine learning platform for agricultural data analysis and model training with privacy-preserving features.
 
 ## Project Description
 
-The Digital Agriculture Sandbox is a comprehensive web application that enables farmers and researchers to collaborate on machine learning models while preserving data privacy. The platform provides tools for dataset management, collaborative model training, and privacy risk analysis in agricultural contexts.
+The Food Security Sandbox is a comprehensive web application that enables farmers and researchers to collaborate on machine learning models while preserving data privacy. The platform provides tools for dataset management, collaborative model training, and privacy risk analysis in agricultural contexts.
 
 **Key Features:**
 - Dataset upload and management
@@ -24,7 +24,7 @@ The Digital Agriculture Sandbox is a comprehensive web application that enables 
 
 MIT License
 
-Copyright (c) 2025 Digital Agriculture Sandbox
+Copyright (c) 2025 Food Security Sandbox
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## References
@@ -55,7 +55,7 @@ This research was supported in part by the National Science Foundation (NSF) und
 
 ## Tutorials
 
-### Getting Started with the Digital Agriculture Sandbox
+### Getting Started with the Food Security Sandbox
 
 #### Prerequisites
 - Docker and Docker Compose installed
@@ -148,7 +148,7 @@ This research was supported in part by the National Science Foundation (NSF) und
 
 ### System Architecture
 
-The Digital Agriculture Sandbox follows a microservices architecture with four main components:
+The Food Security Sandbox follows a microservices architecture with four main components:
 
 1. **Frontend (React.js)**: User interface for data upload, model training, and collaboration
 2. **App Server (Flask)**: Main application server handling authentication and coordination
