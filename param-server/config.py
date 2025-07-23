@@ -1,5 +1,11 @@
 from pydantic_settings import BaseSettings
-class Settings(BaseSettings):
-    tapis_base_url: str
 
-settings = Settings()
+class AppSettings(BaseSettings):
+    host: str
+    port: int
+    debug: bool
+    tapis_base_url: str
+    sandbox_server_url: str
+    mongodb_uri: str
+
+app_settings = AppSettings()
