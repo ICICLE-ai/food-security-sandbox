@@ -1,0 +1,5 @@
+.env
+.env.*
+app-server/.env
+farmer-server/.env
+param-server/.env

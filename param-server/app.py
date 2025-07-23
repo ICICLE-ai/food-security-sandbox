@@ -1,25 +1,17 @@
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from pymongo import MongoClient
 import os
 from dotenv import load_dotenv
 from jose import jwt
 import datetime
-from tapipy.tapis import Tapis
 import logging
 import traceback
-import pandas as pd
-import datetime
 from bson.objectid import ObjectId
 import requests
 import numpy as np
-from sklearn.metrics.pairwise import pairwise_distances
-from flask_socketio import SocketIO, emit, join_room, leave_room
 import json
 import threading
-from sklearn import datasets
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
 import time
 from bson import json_util
 from config import settings
@@ -30,7 +22,6 @@ load_dotenv()
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})  # Apply to all routes
-socketio = SocketIO(app, cors_allowed_origins="*")
 
 # MongoDB connection
 mongo_uri = os.getenv('MONGODB_URI', 'mongodb://mongodb:27017/digital_agriculture')
@@ -40,13 +31,9 @@ client = MongoClient(mongo_uri)
 db = client.digital_agriculture
 messages_collection = db['messages']
 
-# TACC Configuration
-JWT_SECRET = '6554a9038d6a07bbf3cb17973c13ce2c5f24a71c247210b1f2a8d04cfb8a6907a102064629058d7d89ed4d03a5503fa485e3898346f3baeef1ed510268e680f65d6d7ccaed5ca755586702e55142e1c07e53f5b38b7055b4bb55a70baf0dcdc0d4150347041a1509fc7d12d705ffe4c8e9ff9cb8f9bba5ffd6129128b62e84de4e9087d21d342a10d87a53c59eec2323dcf3a3d2276d62793df37c5e96eacbabc44f1ce1930e7e8ceb97c88f83d75d4fdcb2cebda1ceea7b99294c6d0c4db8fa71d2295b7b73f80813a734447983d47f430d0dddbd90c5ff81a35b46cad10cde33901456e3fe6f7166152366693224a072d7182b40c38bbf04c3ccf76ff3b6db'  # Change this in production
 
 def get_username(token):
-    """
-    Validate a Tapis JWT, `token`, and resolve it to a username.
-    """
+    
     headers = {'Content-Type': 'text/html'}
     # call the userinfo endpoint
     url = f"{settings.tapis_base_url}/v3/oauth2/userinfo"
@@ -69,13 +56,6 @@ def convert_numpy_to_list(obj):
         return [convert_numpy_to_list(item) for item in obj]
     return obj
 
-def create_jwt_token(username):
-    """Create a JWT token for the authenticated user"""
-    payload = {
-        'username': username,
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1)
-    }
-    return jwt.encode(payload, JWT_SECRET, algorithm='HS256')
 
 def send_request_to_train_local_model(token, user_id, metadata, updates_list, hyperparameters, lock):
     try:
@@ -99,8 +79,6 @@ def send_request_to_train_local_model(token, user_id, metadata, updates_list, hy
 
 def aggregate_updates(client_updates):
     """Aggregates the model updates from all clients."""
-    num_clients = len(client_updates)
-    print(client_updates)
     aggregated_weights = [np.mean([updates['weights'][i] for updates in client_updates], axis=0) for i in range(len(client_updates[0]['weights']))]
     
     return aggregated_weights
@@ -117,9 +95,6 @@ def evaluate_model(model, test_data, test_labels):
     return accuracy
 
 def start_training_process(collaborators, metadata, model_id, hyperparameters, token):
-    # data_received = request.get_json()  # Get the JSON data from the request body
-    # n_users = int(data_received.get('n'))
-
     try:
         
         username = get_username(token)
@@ -204,9 +179,6 @@ def start_training_process(collaborators, metadata, model_id, hyperparameters, t
         print(f"All training threads completed in {total_time:.4f} seconds.")
         print(f"Received {len(client_updates)} updates from Farmer Server.")
 
-        
-
-        
         print({'message': 'Training complete', 'total_time': total_time, 'num_updates': len(client_updates)}) # Return timing
 
     except Exception as e:

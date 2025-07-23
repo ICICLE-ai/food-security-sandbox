@@ -3,17 +3,14 @@ from flask_cors import CORS
 from pymongo import MongoClient
 import os
 from dotenv import load_dotenv
-from jose import jwt
 import datetime
 import logging
 import traceback
 import pandas as pd
-import datetime
 from bson.objectid import ObjectId
 from multiprocessing import Process, Queue
 import numpy as np
 import pickle
-import threading
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 import time
@@ -47,9 +44,6 @@ def load_PCA_model():
 
 pcaGlobal = load_PCA_model()
 
-
-# JWT Configuration
-JWT_SECRET = '6554a9038d6a07bbf3cb17973c13ce2c5f24a71c247210b1f2a8d04cfb8a6907a102064629058d7d89ed4d03a5503fa485e3898346f3baeef1ed510268e680f65d6d7ccaed5ca755586702e55142e1c07e53f5b38b7055b4bb55a70baf0dcdc0d4150347041a1509fc7d12d705ffe4c8e9ff9cb8f9bba5ffd6129128b62e84de4e9087d21d342a10d87a53c59eec2323dcf3a3d2276d62793df37c5e96eacbabc44f1ce1930e7e8ceb97c88f83d75d4fdcb2cebda1ceea7b99294c6d0c4db8fa71d2295b7b73f80813a734447983d47f430d0dddbd90c5ff81a35b46cad10cde33901456e3fe6f7166152366693224a072d7182b40c38bbf04c3ccf76ff3b6db' # Change this in production
 
 def calculateSensitivities(df):
   sens = []
@@ -160,7 +154,7 @@ def risk_analysis(model,x_train,x_test,y_train,y_test):
 
 def get_username(token):
     """
-    Validate a Tapis JWT, `token`, and resolve it to a username.
+    Validate a Tapis `token`, and resolve it to a username.
     """
     headers = {'Content-Type': 'text/html'}
     # call the userinfo endpoint
@@ -645,8 +639,6 @@ def predict_eval():
         user_id = username
         
 
-        receivedData = request.get_json()
-
         model_info = request.get_json()['model_info']
         eval_data = request.get_json()['eval_data']
         metadata = np.array(model_info['metadata'])
@@ -750,12 +742,8 @@ def predict_eval():
 
 @app.route('/api/test', methods=['GET'])
 def test():
-    datasetCollection = db['datasets']  
-    userDatasetCollection = datasetCollection['osamazafar98']
-    metadata_list = ["N", "P", "K", "temperature", "humidity", "ph", "rainfall", "label"]
-    doc = userDatasetCollection.find_one({"metadata": metadata_list})
-        
-    return str(metadata_list), 200
+    
+    return str("Test"), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001, debug=True) 
