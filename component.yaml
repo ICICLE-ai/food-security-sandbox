@@ -1,15 +1,15 @@
-id: digital-agriculture-sandbox-v1
+id: food-security-sandbox-v1
 owner: Osama Zafar
 primaryThrust: useInspired/SF
-name: Digital Agriculture Sandbox
+name: Food Security Sandbox
 status: In Development
 website: NA
-description: The Digital Agriculture Sandbox is a comprehensive web application that enables farmers and researchers to collaborate on machine learning models while preserving data privacy. The platform provides tools for dataset management, collaborative model training, and privacy risk analysis in agricultural contexts.
+description: The Food Security Sandbox is a comprehensive web application that enables farmers and researchers to collaborate on machine learning models while preserving data privacy. The platform provides tools for dataset management, collaborative model training, and privacy risk analysis in agricultural contexts.
 componentVersion: v1
 targetIcicleRelease: 2025-08
 licenseUrl: 
 publicAccess: true
-sourceCodeUrl: https://github.com/osamazafar980/digital-agriculture-sandbox
+sourceCodeUrl: https://github.com/osamazafar980/food-security-sandbox
 releaseNotesUrl: None
 citation: https://arxiv.org/abs/2506.20872
 containerImage: None
@@ -19,7 +19,7 @@ securityReviewConducted: None
 usageDocumentationAvailable: None
 usageDocumentationUrl:  None
 developerDocumentationAvailable: true 
-developerDocumentationUrl: https://github.com/osamazafar980/digital-agriculture-sandbox/blob/master/README.md
+developerDocumentationUrl: https://github.com/osamazafar980/food-security-sandbox/blob/master/README.md
 trainingTutorialsAvailable: true 
 trainingTutorialsUrl: Leave it, I'll add
 usageMetricsCollected: None
