@@ -71,18 +71,32 @@ This research was supported in part by the National Science Foundation (NSF) und
    cd Digital-Agriculture-Sandbox
    ```
 
-2. **Start the Application**
+2. **Config Environment**
+   Create .env file in app-server with the following keys:
+   - Param Server: http://localhost:5002
+   - MONGODB_URI=mongodb://mongodb:27017/digital_agriculture
+   - CLIENT_ID= your client id
+   - CLIENT_KEY= your client key
+   - TAPIS_BASE_URL=https://icicleai.tapis.io
+   - TENANT=icicleai
+   - APP_BASE_URL=http://localhost:3000
+   - CALLBACK_URL=http://localhost:5003/api/oauth2/callback
+   Create .env files in farmer-server and param-server with the following keys:
+   - TAPIS_BASE_URL=https://icicleai.tapis.io
+   - TENANT=icicleai
+
+3. **Start the Application**
    ```bash
    docker compose -p digital-agriculture-sandbox up --build
    ```
 
-3. **Access the Application**
+4. **Access the Application**
    - Frontend: http://localhost:3000
    - App Server: http://localhost:5003
    - Farmer Server: http://localhost:5001
    - Param Server: http://localhost:5002
 
-4. **Authentication**
+5. **Authentication**
    - Use TACC Tapis authentication
    - Register at https://accounts.tacc.utexas.edu/register
    - Use any other CILogon account such as Google, GitHub, ORCID
