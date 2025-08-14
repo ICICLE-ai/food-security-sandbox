@@ -17,7 +17,7 @@ import time
 import tensorflow as tf
 import json
 import requests
-from config import settings
+from config import app_settings
 
 from art.attacks.inference.membership_inference import MembershipInferenceBlackBox
 from art.estimators.classification import KerasClassifier
@@ -30,8 +30,8 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})  # Apply to all routes
 
 # MongoDB connection
-mongo_uri = os.getenv('MONGODB_URI', 'mongodb://mongodb:27017/digital_agriculture')
-client = MongoClient(mongo_uri)
+# mongo_uri = os.getenv('MONGODB_URI', 'mongodb://mongodb:27017/digital_agriculture')
+client = MongoClient(app_settings.mongodb_uri)
 db = client.digital_agriculture
 epsilon = 5
 
@@ -158,7 +158,7 @@ def get_username(token):
     """
     headers = {'Content-Type': 'text/html'}
     # call the userinfo endpoint
-    url = f"{settings.tapis_base_url}/v3/oauth2/userinfo"
+    url = f"{app_settings.tapis_base_url}/v3/oauth2/userinfo"
     headers = {'X-Tapis-Token': token}
     try:
         rsp = requests.get(url, headers=headers)
@@ -746,4 +746,4 @@ def test():
     return str("Test"), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, debug=True) 
+    app.run(host=app_settings.host, port=app_settings.port, debug=app_settings.debug)

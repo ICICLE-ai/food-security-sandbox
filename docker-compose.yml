@@ -1,10 +1,11 @@
 services:
   frontend:
     build: ./frontend
+    image: ghcr.io/icicle-ai/food-security-system-frontend:latest
     ports:
       - "3000:3000"
     environment:
-      - REACT_APP_API_URL=http://localhost:5003
+      - REACT_APP_API_URL=http://app-server
       - REACT_APP_FARMER_API_URL=http://localhost:5001
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
@@ -16,6 +17,7 @@ services:
 
   app-server:
     build: ./app-server
+    image: ghcr.io/icicle-ai/food-security-system-backend:latest
     ports:
       - "5003:5003"
     volumes:
@@ -31,6 +33,7 @@ services:
 
   farmer-server:
     build: ./farmer-server
+    image: ghcr.io/icicle-ai/food-security-system-sandbox:latest
     ports:
       - "5001:5001"
     volumes:
@@ -43,6 +46,7 @@ services:
     
   param-server:
     build: ./param-server
+    image: ghcr.io/icicle-ai/food-security-system-param:latest
     ports:
       - "5002:5002"
     volumes:
