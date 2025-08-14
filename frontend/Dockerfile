@@ -44,7 +44,19 @@ COPY . .
 ENV CHOKIDAR_USEPOLLING=true
 ENV WATCHPACK_POLLING=true
 
+# EXPOSE 3000
+
+# # Use development mode
+# CMD ["npm", "start"] 
+
+# Build the React app for production
+RUN npm run build
+
+# Install serve to serve the built files
+RUN npm install -g serve
+
+# Expose port 3000 (keep same port for localhost)
 EXPOSE 3000
 
-# Use development mode
-CMD ["npm", "start"] 
+# Serve the built production files
+CMD ["serve", "-s", "build", "-l", "3000"]

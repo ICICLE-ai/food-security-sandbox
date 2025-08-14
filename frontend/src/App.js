@@ -25,21 +25,26 @@ function App() {
         setIsAuthenticated(true);
       }
       else{
-
-        axios.get(`${process.env.REACT_APP_API_URL}/api/auth/verify`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('tapis_token')}`
-          }
-        }).then(response => {
-          console.log(response)
-          setIsAuthenticated(true);
-        })
-        .catch(error => {
-          console.error(error);
+        if(localStorage.getItem('tapis_token') == null){
           localStorage.removeItem('tapis_token');
           localStorage.removeItem('tapis_username');
           window.location.href = 'http://localhost:5003/api/auth/login';
-        });
+        }else{
+          axios.get(`${process.env.REACT_APP_API_URL}/api/auth/verify`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('tapis_token')}`
+            }
+          }).then(response => {
+            console.log(response)
+            setIsAuthenticated(true);
+          })
+          .catch(error => {
+            console.error(error);
+            localStorage.removeItem('tapis_token');
+            localStorage.removeItem('tapis_username');
+            window.location.href = 'http://localhost:5003/api/auth/login';
+          });
+        }
       }
   })
 
