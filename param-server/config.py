@@ -7,5 +7,8 @@ class AppSettings(BaseSettings):
     tapis_base_url: str
     sandbox_server_url: str
     mongodb_uri: str
+    class Config:
+        env_file: str = ".env"
+        extra = "ignore"
 
 app_settings = AppSettings()
