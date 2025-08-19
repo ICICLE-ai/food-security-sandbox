@@ -3,3 +3,6 @@
 app-server/.env
 farmer-server/.env
 param-server/.env
+
+# Ignoring Docker Compose File to avoid chance of secrets being push.
+docker-compose.yml
