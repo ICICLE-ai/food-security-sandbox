@@ -59,7 +59,7 @@ const UploadForm = ({setUpdate}) => {
             formData.append('field1', field1);
             formData.append('file', csvFile);
 
-            const response = await axios.post(`${process.env.REACT_APP_FARMER_API_URL}/api/upload_csv`, formData, {
+            const response = await axios.post(`/sandbox/upload_csv`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                     'Authorization': `Bearer ${token}`

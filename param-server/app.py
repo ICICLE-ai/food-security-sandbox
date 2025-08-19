@@ -64,7 +64,7 @@ def send_request_to_train_local_model(
             "Content-Type": "application/json",
         }
         response = requests.post(
-            f"{app_settings.sandbox_server_url}/api/trainLocalModel",
+            f"{app_settings.sandbox_server_url}/sandbox/trainLocalModel",
             headers=headers,
             json={
                 "userID": str(user_id),
@@ -198,7 +198,7 @@ def start_training_process(collaborators, metadata, model_id, hyperparameters, t
                 print("Not Found Private!")
 
         response = requests.post(
-            f"{app_settings.sandbox_server_url}/api/model_risk_analysis",
+            f"{app_settings.sandbox_server_url}/sandbox/model_risk_analysis",
             headers=headers,
             json={"model_info": json_util.dumps(model_info)},
         )

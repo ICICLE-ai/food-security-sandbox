@@ -20,7 +20,7 @@ const ModelTraining = ({userName, selectedDataset}) => {
   useEffect(() => {
     const fetchSimilarFarmers = async () => {
       console.log('Identifying Collaborators')
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/get_similar_farmers`, {selectedDataset},{
+      const response = await axios.post(`/api/get_similar_farmers`, {selectedDataset},{
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -44,7 +44,7 @@ const ModelTraining = ({userName, selectedDataset}) => {
 
       
 
-      axios.post(`${process.env.REACT_APP_API_URL}/train`,
+      axios.post(`/api/train`,
         {'collaborators': selectedCollaborators, 
           hyperparameters: {
                 'modelName': modelName, 

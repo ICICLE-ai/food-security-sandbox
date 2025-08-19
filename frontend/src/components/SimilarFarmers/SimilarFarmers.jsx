@@ -26,7 +26,7 @@ const SimilarFarmers = ({userName, selectedDataset, userID}) => {
     const fetchProfiles = async () => {
       try {
         const token = localStorage.getItem('tapis_token');
-        const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/get_similar_farmers`, {selectedDataset},{
+        const response = await axios.post(`/api/get_similar_farmers`, {selectedDataset},{
           headers: {
             'Authorization': `Bearer ${token}`
           }

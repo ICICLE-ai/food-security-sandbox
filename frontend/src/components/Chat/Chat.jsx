@@ -54,7 +54,7 @@ const Conversations = ({ senderID, receiverID, setReceiverID, setLoading }) => {
   useEffect(() => {
     if (senderID) { // Only fetch conversations if senderID is available
       const token = localStorage.getItem('tapis_token');
-      axios.post(`${process.env.REACT_APP_API_URL}/conversations`,{"sender_id":senderID},{
+      axios.post(`/api/conversations`,{"sender_id":senderID},{
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -91,7 +91,7 @@ const ChatBox = (({ senderID, receiverID, setLoading }) => {
   useEffect(() => {
     if (senderID && receiverID !== null) { // Only fetch messages if both IDs are available
       axios
-        .post(`${process.env.REACT_APP_API_URL}/getMessages`,{"sender_id":senderID,"receiver_id":receiverID},{
+        .post(`/api/getMessages`,{"sender_id":senderID,"receiver_id":receiverID},{
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('tapis_token')}`
           }
@@ -110,7 +110,7 @@ const ChatBox = (({ senderID, receiverID, setLoading }) => {
     if (senderID && receiverID !== null && message) {
       const timestamp = new Date().toISOString();
       axios
-        .post(`${process.env.REACT_APP_API_URL}/sendMessage`, {
+        .post(`/api/sendMessage`, {
           senderID,
           receiverID,
           message,

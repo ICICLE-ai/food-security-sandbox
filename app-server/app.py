@@ -187,7 +187,7 @@ def get_similar_farmers():
                 "Content-Type": "application/json"
                 }
             
-            response = requests.get(f"{app_settings.sandbox_server_url}/api/load_datasets", headers=headers, params={'datasetId' : selected_DS_ID})
+            response = requests.get(f"{app_settings.sandbox_server_url}/sandbox/load_datasets", headers=headers, params={'datasetId' : selected_DS_ID})
         except requests.exceptions.RequestException as e:
             print(f"Error during request: {e}")
             return jsonify({"status": f"Error during request: {e}"}), 500
@@ -226,7 +226,7 @@ def get_similar_farmers():
         logging.error(traceback.format_exc())
         return jsonify({'message': 'An error occurred while processing the file', 'error': str(e)}), 500
 
-@app.route("/getMessages", methods=["POST"])
+@app.route("/api/getMessages", methods=["POST"])
 def get_messages():
     try:
         auth_header = request.headers.get('Authorization')
@@ -279,7 +279,7 @@ def get_messages():
 
     return jsonify(messages_list)
 
-@app.route("/sendMessage", methods=["POST"])
+@app.route("/api/sendMessage", methods=["POST"])
 def send_message():
     try:
         auth_header = request.headers.get('Authorization')
@@ -321,7 +321,7 @@ def send_message():
         return jsonify({'message': 'An error occurred ', 'error': str(e)}), 500
 
 
-@app.route('/conversations', methods=['POST'])
+@app.route('/api/conversations', methods=['POST'])
 def get_conversations():
     try:
         auth_header = request.headers.get('Authorization')
@@ -386,7 +386,7 @@ def get_conversations():
         logging.error(traceback.format_exc())
         return jsonify({"error": "Internal server error"}), 500
 
-@app.route('/train', methods=['POST'])
+@app.route('/api/train', methods=['POST'])
 def train():
     try:
         auth_header = request.headers.get('Authorization')
@@ -421,7 +421,7 @@ def train():
                     "Authorization": f"Bearer {token}",
                     "Content-Type": "application/json"
                     }
-        response = requests.get(f"{app_settings.sandbox_server_url}/api/get_datasets_metadata", headers=headers, params={'datasetId' : hyperparameters['datasetName']})
+        response = requests.get(f"{app_settings.sandbox_server_url}/sandbox/get_datasets_metadata", headers=headers, params={'datasetId' : hyperparameters['datasetName']})
         
         metadata = response.json()['metadata']
         num_classes = response.json()['num_classes']
@@ -490,7 +490,7 @@ def get_model_prediction():
         eval_data = request.get_json()['eval_data']
         
         headers = {'Authorization': f'Bearer {token}'}
-        response = requests.post(f"{app_settings.sandbox_server_url}/api/predict_eval", 
+        response = requests.post(f"{app_settings.sandbox_server_url}/sandbox/predict_eval", 
                                 headers=headers, 
                                 json={'model_info': model_info, 'eval_data': eval_data})
         

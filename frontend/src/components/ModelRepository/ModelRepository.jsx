@@ -105,7 +105,7 @@ const ModelRepository = ({userName}) => {
         }
         else{
           axios.post(
-            `${process.env.REACT_APP_API_URL}/api/predict_model`,
+            `/api/predict_model`,
             {
               model_info: selectedModelInfo,
               eval_data: evalInputData
@@ -133,12 +133,12 @@ const ModelRepository = ({userName}) => {
     const fetchModels = async () => {
       try {
 
-        var responsePublic = await axios.get(`${process.env.REACT_APP_API_URL}/api/get_public_models`, {
+        var responsePublic = await axios.get(`/api/get_public_models`, {
           headers: {
           'Authorization': `Bearer ${localStorage.getItem('tapis_token')}`
           }
         })
-        var responsePrivate = await axios.get(`${process.env.REACT_APP_API_URL}/api/get_user_models`, {
+        var responsePrivate = await axios.get(`/api/get_user_models`, {
           headers: {
           'Authorization': `Bearer ${localStorage.getItem('tapis_token')}`
           }

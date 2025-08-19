@@ -168,12 +168,12 @@ def get_username(token):
         raise Exception(f"Error looking up token info; debug: {e}")
     return username
 
-@app.route('/api/health', methods=['GET'])
+@app.route('/sandbox/health', methods=['GET'])
 def health_check():
     return jsonify({"status": "healthy", "service": "farmer-server"})
 
 
-@app.route('/api/get_user_datasets', methods=['GET'])
+@app.route('/sandbox/get_user_datasets', methods=['GET'])
 def get_user_datasets():
     try:
         auth_header = request.headers.get('Authorization')
@@ -209,7 +209,7 @@ def get_user_datasets():
         logging.error(traceback.format_exc())
         return jsonify({'message': 'An error occurred while loading datasets', 'error': str(e)}), 500
     
-@app.route('/api/upload_csv', methods=['POST'])
+@app.route('/sandbox/upload_csv', methods=['POST'])
 def upload_csv():
     try:
         auth_header = request.headers.get('Authorization')
@@ -285,7 +285,7 @@ def upload_csv():
         return jsonify({'message': 'An error occurred while processing the file', 'error': str(e)}), 500
 
 
-@app.route('/api/delete_dataset', methods=['GET'])
+@app.route('/sandbox/delete_dataset', methods=['GET'])
 def delete_dataset():
     try:
         auth_header = request.headers.get('Authorization')
@@ -334,7 +334,7 @@ def delete_dataset():
         logging.error(traceback.format_exc())
         return jsonify({'message': 'An error occurred while loading datasets', 'error': str(e)}), 500
     
-@app.route('/api/load_datasets', methods=['GET'])
+@app.route('/sandbox/load_datasets', methods=['GET'])
 def load_datasets():
     try:
         auth_header = request.headers.get('Authorization')
@@ -406,7 +406,7 @@ def load_datasets():
         logging.error(traceback.format_exc())
         return jsonify({'message': 'An error occurred while loading datasets', 'error': str(e)}), 500
 
-@app.route('/api/get_datasets_metadata', methods=['GET'])
+@app.route('/sandbox/get_datasets_metadata', methods=['GET'])
 def get_datasets_metadata():
     try:
         auth_header = request.headers.get('Authorization')
@@ -453,7 +453,7 @@ def get_datasets_metadata():
         logging.error(traceback.format_exc())
         return jsonify({'message': 'An error occurred while loading datasets', 'error': str(e)}), 500
 
-@app.route('/api/trainLocalModel', methods=['POST'])
+@app.route('/sandbox/trainLocalModel', methods=['POST'])
 def train_local_model():
     try:
         start_time = time.time()
@@ -512,7 +512,7 @@ def train_local_model():
         logging.error(traceback.format_exc())
         return jsonify({'message': 'An error occurred while loading datasets', 'error': str(e)}), 500
     
-@app.route('/api/model_risk_analysis', methods=['POST'])
+@app.route('/sandbox/model_risk_analysis', methods=['POST'])
 def model_risk_analysis():
     try:    
         auth_header = request.headers.get('Authorization')
@@ -613,7 +613,7 @@ def model_risk_analysis():
         return jsonify({'message': 'An error occurred while loading datasets', 'error': str(e)}), 500
 
 
-@app.route('/api/predict_eval', methods=['POST'])
+@app.route('/sandbox/predict_eval', methods=['POST'])
 def predict_eval():
     try:
         auth_header = request.headers.get('Authorization')
@@ -740,7 +740,7 @@ def predict_eval():
         return jsonify({'message': 'An error occurred while loading datasets', 'error': str(e)}), 500
 
 
-@app.route('/api/test', methods=['GET'])
+@app.route('/sandbox/test', methods=['GET'])
 def test():
     
     return str("Test"), 200
