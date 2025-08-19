@@ -1,9 +1,6 @@
 // web_application/Frontend/src/components/Training/TrainingComponent.jsx
-import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { Typography, Box, Grid, Snackbar, CircularProgress } from '@mui/material';
-import UploadForm from '../Upload/Upload';
-import SimilarFarmers from '../SimilarFarmers/SimilarFarmers';
 import UploadedDatasets from '../UploadedDatasets/UploadedDatasets';
 import ModelTraining from '../ModelTraining/ModelTraining';
 import ModelRepository from '../ModelRepository/ModelRepository'

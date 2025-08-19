@@ -14,7 +14,6 @@ const ModelTraining = ({userName, selectedDataset}) => {
   const [modelVisibility, setModelVisibility] = useState("Public");
   const [collaborators, setCollaborators] = useState([]);
   const [selectedCollaborators, setSelectedCollaborators] = useState([]);
-  const [collaborationStatus, setCollaborationStatus] = useState(false);
   const token = localStorage.getItem('tapis_token');
 
   useEffect(() => {

@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, {useState } from 'react';
 import { Button, IconButton, Tooltip, Avatar, Menu, MenuItem, Badge } from "@mui/material";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import axios from 'axios';
 
 
 export default function LoggedIn({ onLogout }) {
