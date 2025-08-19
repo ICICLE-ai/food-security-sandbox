@@ -28,7 +28,7 @@ function App() {
         if(localStorage.getItem('tapis_token') == null){
           localStorage.removeItem('tapis_token');
           localStorage.removeItem('tapis_username');
-          window.location.href = 'http://localhost:5003/api/auth/login';
+          window.location.href = `${process.env.REACT_APP_API_URL}/api/auth/login`;
         }else{
           axios.get(`${process.env.REACT_APP_API_URL}/api/auth/verify`, {
             headers: {
@@ -42,7 +42,7 @@ function App() {
             console.error(error);
             localStorage.removeItem('tapis_token');
             localStorage.removeItem('tapis_username');
-            window.location.href = 'http://localhost:5003/api/auth/login';
+            window.location.href = `${process.env.REACT_APP_API_URL}/api/auth/login`;
           });
         }
       }
