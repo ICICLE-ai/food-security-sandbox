@@ -1,60 +1,74 @@
 services:
   frontend:
     build: ./frontend
-    image: ghcr.io/icicle-ai/food-security-system-frontend:latest
+    image: ghcr.io/icicle-ai/food-security-sandbox-frontend:latest
     ports:
-      - "3000:3000"
+      - "5001:5000"
     environment:
-      - REACT_APP_API_URL=http://digital-agriculture-sandbox-app-server-1:5003
-      - REACT_APP_FARMER_API_URL=http://digital-agriculture-sandbox-farmer-server-1:5001
+      - BACKEND_URL=backend
+      - SANDBOX_URL=sandbox
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
       - NODE_ENV=production
     depends_on:
-      - app-server
-      - farmer-server
+      - backend
+      - sandbox
     restart: unless-stopped
 
-  app-server:
+  backend:
     build: ./app-server
-    image: ghcr.io/icicle-ai/food-security-system-backend:latest
+    image: ghcr.io/icicle-ai/food-security-sandbox-backend:latest
     ports:
       - "5003:5003"
     volumes:
       - ./app-server:/app
     environment:
+      - CLIENT_ID=<client_id>
+      - CLIENT_KEY=<client_key>
+      - CALLBACK_URL=<client_callback_url>
+      - TAPIS_BASE_URL=<tapis_base_url>
+      - APP_BASE_URL=http://backend
+      - TENANT=<tenant>
+      - HOST=0.0.0.0
+      - PORT=5003
+      - DEBUG=true
+      - PARAM_SERVER_URL=http://param
+      - SANDBOX_SERVER_URL=http://sandbox
       - MONGODB_URI=mongodb://mongodb:27017/digital_agriculture
-      - REACT_APP_FARMER_API_URL=http://digital-agriculture-sandbox-farmer-server-1:5001
-      - REACT_APP_PARAM_API_URL=http://digital-agriculture-sandbox-param-server-1:5002
-
-    env_file: "app-server/.env"
     depends_on:
       - mongodb
 
-  farmer-server:
+  sandbox:
     build: ./farmer-server
-    image: ghcr.io/icicle-ai/food-security-system-sandbox:latest
+    image: ghcr.io/icicle-ai/food-security-sandbox-sandbox:latest
     ports:
-      - "5001:5001"
+      - "5004:5004"
     volumes:
       - ./farmer-server:/app
     environment:
+      - HOST=0.0.0.0
+      - PORT=5004
+      - DEBUG=true
+      - TAPIS_BASE_URL=<tapis_base_url>
+      - PARAM_SERVER_URL=http://param
       - MONGODB_URI=mongodb://mongodb:27017/digital_agriculture
-    env_file: "farmer-server/.env"
     depends_on:
       - mongodb
     
-  param-server:
+  param:
     build: ./param-server
-    image: ghcr.io/icicle-ai/food-security-system-param:latest
+    image: ghcr.io/icicle-ai/food-security-sandbox-param:latest
     ports:
       - "5002:5002"
     volumes:
       - ./param-server:/app
     environment:
+      - HOST=0.0.0.0
+      - PORT=5002
+      - DEBUG=true
+      - TAPIS_BASE_URL=<tapis_base_url>
+      - SANDBOX_SERVER_URL=http://sandbox
       - MONGODB_URI=mongodb://mongodb:27017/digital_agriculture
-      - REACT_APP_FARMER_API_URL=http://digital-agriculture-sandbox-farmer-server-1:5001
-    env_file: "param-server/.env"
     depends_on:
       - mongodb
 
