@@ -39,7 +39,7 @@ const UploadedDatasets = ({userName, setSelectedDataset, update}) => {
     try {
       
       const response = await axios.get(
-        `/api/delete_dataset`,
+        `/sandbox/delete_dataset`,
         {
           params: { datasetId },
           headers: {
@@ -67,7 +67,7 @@ const UploadedDatasets = ({userName, setSelectedDataset, update}) => {
     const fetchDatasets = async () => {
       try {
 
-        axios.get(`/api/get_user_datasets`, {
+        axios.get(`/sandbox/get_user_datasets`, {
           headers: {
           'Authorization': `Bearer ${localStorage.getItem('tapis_token')}`
           }
