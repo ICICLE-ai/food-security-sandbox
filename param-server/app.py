@@ -25,8 +25,17 @@ CORS(app, resources={r"/*": {"origins": "*"}})  # Apply to all routes
 # mongo_uri = os.getenv('MONGODB_URI', 'mongodb://mongodb:27017/digital_agriculture')
 # app_settings.sandbox_server_url = os.getenv('app_settings.sandbox_server_url', 'http://localhost:5001')
 
-client = MongoClient(app_settings.mongodb_uri)
-db = client.digital_agriculture
+client = MongoClient(
+    app_settings.mongodb_uri,
+    maxPoolSize=5,           # Limit concurrent connections
+    minPoolSize=1,           # Keep minimum connections alive
+    maxIdleTimeMS=30000,     # Close idle connections after 30s
+    serverSelectionTimeoutMS=5000,  # Fail fast instead of 30s timeout
+    socketTimeoutMS=20000,   # Socket timeout
+    connectTimeoutMS=20000,  # Connection timeout
+    retryWrites=True         # Retry failed writes
+)
+db = client.get_default_database()
 messages_collection = db["messages"]
 
 
