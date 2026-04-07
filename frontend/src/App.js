@@ -6,6 +6,7 @@ import LoggedIn from './components/Navigation/LoggedIn';
 import LoggedOut from './components/Navigation/LoggedOut';
 import CollaborativeML from './components/CollaborativeML/CollaborativeML';
 import Chat from "./components/Chat/Chat";
+import DataSharing from "./components/DataSharing/DataSharing";
 import './App.css';
 import axios from 'axios';
 import icicleLogo from "./assets/icicleLogo.png"
@@ -85,6 +86,7 @@ function App() {
         <Route path="/" element={isAuthenticated ? <Home /> : <Loader></Loader>} />
         <Route path="/training" element={isAuthenticated ? <CollaborativeML /> : <Navigate to="/" />} />
         <Route path="/chat" element={isAuthenticated ? <Chat /> : <Navigate to="/" />} />
+        <Route path="/dataSharing" element={isAuthenticated ? <DataSharing /> : <Navigate to="/" />} />
       </Routes>
     </Router>
     

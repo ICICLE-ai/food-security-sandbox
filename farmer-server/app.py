@@ -453,6 +453,93 @@ def get_datasets_metadata():
         logging.error(traceback.format_exc())
         return jsonify({'message': 'An error occurred while loading datasets', 'error': str(e)}), 500
 
+
+def check_k_anonymity(df, k, direct_ids=None):
+    """
+    Automatically checks k-anonymity by ignoring direct identifiers 
+    and treating all other columns as Quasi-Identifiers (QI).
+    """
+    if direct_ids is None:
+        # Default list based on your dataset
+        direct_ids = []
+
+    # 1. Drop Direct Identifiers (they are never part of the 'crowd')
+    # We use errors='ignore' in case some columns aren't present
+    df_qi = df.drop(columns=direct_ids, errors='ignore')
+    
+    # 2. Identify all remaining columns as Quasi-Identifiers
+    qi_columns = list(df_qi.columns)
+    print(f"Checking k-anonymity based on QIs: {qi_columns}")
+    
+    # 3. Group by all QIs and count the size of each group
+    group_counts = df_qi.groupby(qi_columns).size()
+    
+    # 4. Determine the minimum k value in the dataset
+    actual_min_k = group_counts.min()
+    is_k_anonymous = actual_min_k >= k
+    
+    return {
+        "is_k_anonymous": bool(is_k_anonymous),
+        "target_k": k,
+        "actual_min_k": int(actual_min_k),
+        "vulnerable_rows_count": int((group_counts < k).sum())
+    }
+
+
+@app.route('/api/export_dataset_to_feast', methods=['POST'])
+def export_dataset_to_feast():
+    try:
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({"status": "error", "message": "Invalid token"}), 401
+
+        token = auth_header.split(' ')[1]
+        username = get_username(token)
+
+        session = db.sessions.find_one({"username": username})
+        if not session:
+            return jsonify({"status": "error", "message": "Session not found"}), 401
+
+        expires_at = datetime.datetime.fromisoformat(session['tapis_token']['expires_at'])
+        now_utc = datetime.datetime.now(datetime.timezone.utc)
+        if now_utc > expires_at:
+            return jsonify({"status": "error", "message": "Tapis token expired"}), 401
+
+        payload = request.get_json(silent=True) or {}
+        dataset_id = payload.get('datasetId')
+        privacy_enabled = payload.get('privacyEnabled', True)
+        direct_ids = payload.get('direct_ids', [])
+
+        if not dataset_id:
+            return jsonify({"status": "error", "message": "datasetId is required"}), 400
+
+        dataset_document = db['datasets'][username].find_one({"_id": ObjectId(str(dataset_id))})
+        if not dataset_document:
+            return jsonify({"status": "error", "message": "Dataset not found"}), 404
+
+        df = pd.DataFrame(dataset_document.get('data', []))
+        headers = list(df.columns)
+        num_records = int(len(df))
+        
+        if not isinstance(direct_ids, list):
+            direct_ids = []
+
+        results = check_k_anonymity(df, k=5, direct_ids=direct_ids) if privacy_enabled else None
+
+        return jsonify({
+            "status": "success",
+            "datasetId": str(dataset_id),
+            "header": headers,
+            "num_records": num_records,
+            "privacyEnabled": bool(privacy_enabled),
+            "direct_ids": direct_ids,
+            "k_anonymity": results
+        }), 200
+    except Exception as e:
+        logging.error(f'Unexpected error: {str(e)}')
+        logging.error(traceback.format_exc())
+        return jsonify({'message': 'An error occurred while exporting dataset', 'error': str(e)}), 500
+
 @app.route('/api/trainLocalModel', methods=['POST'])
 def train_local_model():
     try:
