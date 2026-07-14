@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
 from pymongo import MongoClient
 import os
@@ -17,6 +17,8 @@ import time
 import tensorflow as tf
 import json
 import requests
+import io
+from scipy.special import lambertw
 from config import app_settings
 
 from art.attacks.inference.membership_inference import MembershipInferenceBlackBox
@@ -470,20 +472,167 @@ def check_k_anonymity(df, k, direct_ids=None):
     # 2. Identify all remaining columns as Quasi-Identifiers
     qi_columns = list(df_qi.columns)
     print(f"Checking k-anonymity based on QIs: {qi_columns}")
-    
-    # 3. Group by all QIs and count the size of each group
-    group_counts = df_qi.groupby(qi_columns).size()
-    
-    # 4. Determine the minimum k value in the dataset
-    actual_min_k = group_counts.min()
+
+    if len(qi_columns) == 0:
+        # Every column was marked as a direct identifier, so there are no
+        # quasi-identifiers left to group by. With nothing distinguishing
+        # rows, the whole dataset is a single "crowd" of size len(df).
+        actual_min_k = len(df)
+        group_counts_below_k = len(df) if actual_min_k < k else 0
+    else:
+        # 3. Group by all QIs and count the size of each group
+        group_counts = df_qi.groupby(qi_columns).size()
+
+        # 4. Determine the minimum k value in the dataset
+        actual_min_k = group_counts.min()
+        group_counts_below_k = int((group_counts < k).sum())
+
     is_k_anonymous = actual_min_k >= k
     
     return {
         "is_k_anonymous": bool(is_k_anonymous),
         "target_k": k,
         "actual_min_k": int(actual_min_k),
-        "vulnerable_rows_count": int((group_counts < k).sum())
+        "vulnerable_rows_count": group_counts_below_k
     }
+
+
+LATITUDE_COLUMN_NAMES = {'latitude', 'lat'}
+LONGITUDE_COLUMN_NAMES = {'longitude', 'lon', 'lng'}
+
+
+def find_location_columns(columns):
+    """Detect a Latitude/Longitude column pair by (case-insensitive) name."""
+    latitude_column = None
+    longitude_column = None
+    for col in columns:
+        normalized = str(col).strip().lower()
+        if normalized in LATITUDE_COLUMN_NAMES and latitude_column is None:
+            latitude_column = col
+        elif normalized in LONGITUDE_COLUMN_NAMES and longitude_column is None:
+            longitude_column = col
+    return latitude_column, longitude_column
+
+
+def get_dataset_column_info(df):
+    """
+    Numeric columns eligible for Laplace-noise differential privacy, and the
+    Latitude/Longitude pair (if any) which is handled separately by the
+    geo-indistinguishability mechanism instead.
+    """
+    latitude_column, longitude_column = find_location_columns(df.columns)
+    location_columns = {c for c in [latitude_column, longitude_column] if c}
+
+    numeric_columns = [
+        col for col in df.columns
+        if col not in location_columns and pd.api.types.is_numeric_dtype(df[col])
+    ]
+
+    return {
+        "columns": list(df.columns),
+        "numeric_columns": numeric_columns,
+        "latitude_column": latitude_column,
+        "longitude_column": longitude_column
+    }
+
+
+def apply_differential_privacy_noise(df, numeric_columns, epsilon):
+    """
+    Laplace mechanism: for each numeric column, add noise drawn from
+    Laplace(0, sensitivity/epsilon), where sensitivity is approximated as the
+    column's observed value range (max - min).
+    """
+    df = df.copy()
+    for col in numeric_columns:
+        if col not in df.columns:
+            continue
+        col_values = df[col].astype(float)
+        sensitivity = col_values.max() - col_values.min()
+        if pd.isna(sensitivity) or sensitivity == 0:
+            continue
+        scale = sensitivity / epsilon
+        noise = np.random.laplace(loc=0.0, scale=scale, size=len(df))
+        df[col] = col_values + noise
+    return df
+
+
+def _sample_planar_laplace_radius(epsilon):
+    """Inverse-CDF sampling of the radius for the planar Laplace mechanism."""
+    p = np.random.uniform(0, 1)
+    w = lambertw((p - 1) / np.e, k=-1).real
+    return -1.0 / epsilon * (w + 1)
+
+
+EARTH_RADIUS_METERS = 6378137.0
+
+
+def apply_location_privacy(df, lat_col, lon_col, epsilon):
+    """
+    Geo-indistinguishability via the planar Laplace mechanism (Andres et al.,
+    2013): perturbs each (lat, lon) point by a 2D Laplace-distributed offset
+    sampled in polar form, which satisfies epsilon-geo-indistinguishability.
+    """
+    df = df.copy()
+    new_lats = []
+    new_lons = []
+
+    for lat, lon in zip(df[lat_col].astype(float), df[lon_col].astype(float)):
+        theta = np.random.uniform(0, 2 * np.pi)
+        r = _sample_planar_laplace_radius(epsilon)
+
+        d_lat = (r * np.cos(theta)) / EARTH_RADIUS_METERS * (180.0 / np.pi)
+        cos_lat = np.cos(np.radians(lat))
+        d_lon = 0.0 if cos_lat == 0 else (r * np.sin(theta)) / (EARTH_RADIUS_METERS * cos_lat) * (180.0 / np.pi)
+
+        new_lats.append(lat + d_lat)
+        new_lons.append(lon + d_lon)
+
+    df[lat_col] = new_lats
+    df[lon_col] = new_lons
+    return df
+
+
+@app.route('/api/get_dataset_column_info', methods=['POST'])
+def get_dataset_column_info_endpoint():
+    try:
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({"status": "error", "message": "Invalid token"}), 401
+
+        token = auth_header.split(' ')[1]
+        username = get_username(token)
+
+        session = db.sessions.find_one({"username": username})
+        if not session:
+            return jsonify({"status": "error", "message": "Session not found"}), 401
+
+        expires_at = datetime.datetime.fromisoformat(session['tapis_token']['expires_at'])
+        now_utc = datetime.datetime.now(datetime.timezone.utc)
+        if now_utc > expires_at:
+            return jsonify({"status": "error", "message": "Tapis token expired"}), 401
+
+        payload = request.get_json(silent=True) or {}
+        dataset_id = payload.get('datasetId')
+
+        if not dataset_id:
+            return jsonify({"status": "error", "message": "datasetId is required"}), 400
+
+        dataset_document = db['datasets'][username].find_one({"_id": ObjectId(str(dataset_id))})
+        if not dataset_document:
+            return jsonify({"status": "error", "message": "Dataset not found"}), 404
+
+        df = pd.DataFrame(dataset_document.get('data', []))
+        column_info = get_dataset_column_info(df)
+
+        return jsonify({
+            "status": "success",
+            "datasetId": str(dataset_id),
+            **column_info
+        }), 200
+    except Exception as e:
+        logging.error(f'Unexpected error: {str(e)}')
+        logging.error(traceback.format_exc())
+        return jsonify({'message': 'An error occurred while loading column info', 'error': str(e)}), 500
 
 
 @app.route('/api/export_dataset_to_feast', methods=['POST'])
@@ -539,6 +688,145 @@ def export_dataset_to_feast():
         logging.error(f'Unexpected error: {str(e)}')
         logging.error(traceback.format_exc())
         return jsonify({'message': 'An error occurred while exporting dataset', 'error': str(e)}), 500
+
+
+@app.route('/api/check_k_anonymity', methods=['POST'])
+def check_k_anonymity_endpoint():
+    try:
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({"status": "error", "message": "Invalid token"}), 401
+
+        token = auth_header.split(' ')[1]
+        username = get_username(token)
+
+        session = db.sessions.find_one({"username": username})
+        if not session:
+            return jsonify({"status": "error", "message": "Session not found"}), 401
+
+        expires_at = datetime.datetime.fromisoformat(session['tapis_token']['expires_at'])
+        now_utc = datetime.datetime.now(datetime.timezone.utc)
+        if now_utc > expires_at:
+            return jsonify({"status": "error", "message": "Tapis token expired"}), 401
+
+        payload = request.get_json(silent=True) or {}
+        dataset_id = payload.get('datasetId')
+        direct_ids = payload.get('direct_ids', [])
+        k = payload.get('k', 5)
+
+        if not dataset_id:
+            return jsonify({"status": "error", "message": "datasetId is required"}), 400
+
+        if not isinstance(direct_ids, list):
+            direct_ids = []
+
+        dataset_document = db['datasets'][username].find_one({"_id": ObjectId(str(dataset_id))})
+        if not dataset_document:
+            return jsonify({"status": "error", "message": "Dataset not found"}), 404
+
+        df = pd.DataFrame(dataset_document.get('data', []))
+
+        results = check_k_anonymity(df, k=int(k), direct_ids=direct_ids)
+
+        return jsonify({
+            "status": "success",
+            "datasetId": str(dataset_id),
+            "direct_ids": direct_ids,
+            "k_anonymity": results
+        }), 200
+    except Exception as e:
+        logging.error(f'Unexpected error: {str(e)}')
+        logging.error(traceback.format_exc())
+        return jsonify({'message': 'An error occurred while checking k-anonymity', 'error': str(e)}), 500
+
+
+@app.route('/api/export_dataset_columns', methods=['POST'])
+def export_dataset_columns():
+    try:
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({"status": "error", "message": "Invalid token"}), 401
+
+        token = auth_header.split(' ')[1]
+        username = get_username(token)
+
+        session = db.sessions.find_one({"username": username})
+        if not session:
+            return jsonify({"status": "error", "message": "Session not found"}), 401
+
+        expires_at = datetime.datetime.fromisoformat(session['tapis_token']['expires_at'])
+        now_utc = datetime.datetime.now(datetime.timezone.utc)
+        if now_utc > expires_at:
+            return jsonify({"status": "error", "message": "Tapis token expired"}), 401
+
+        payload = request.get_json(silent=True) or {}
+        dataset_id = payload.get('datasetId')
+        columns = payload.get('columns', [])
+        differential_privacy = payload.get('differential_privacy') or {}
+        location_privacy = payload.get('location_privacy') or {}
+
+        if not dataset_id:
+            return jsonify({"status": "error", "message": "datasetId is required"}), 400
+
+        if not isinstance(columns, list) or len(columns) == 0:
+            return jsonify({"status": "error", "message": "At least one column must be selected"}), 400
+
+        dataset_document = db['datasets'][username].find_one({"_id": ObjectId(str(dataset_id))})
+        if not dataset_document:
+            return jsonify({"status": "error", "message": "Dataset not found"}), 404
+
+        df = pd.DataFrame(dataset_document.get('data', []))
+
+        missing_columns = [col for col in columns if col not in df.columns]
+        if missing_columns:
+            return jsonify({"status": "error", "message": f"Unknown columns: {missing_columns}"}), 400
+
+        export_df = df[columns]
+        column_info = get_dataset_column_info(export_df)
+
+        if differential_privacy.get('enabled'):
+            epsilon = float(differential_privacy.get('epsilon', 5))
+            if epsilon <= 0:
+                return jsonify({"status": "error", "message": "epsilon must be greater than 0"}), 400
+            # Only noise the numeric columns the caller asked for (lets users
+            # exempt columns like label/target fields from noise injection).
+            requested_dp_columns = differential_privacy.get('columns')
+            if isinstance(requested_dp_columns, list):
+                dp_columns = [col for col in requested_dp_columns if col in column_info['numeric_columns']]
+            else:
+                dp_columns = column_info['numeric_columns']
+            export_df = apply_differential_privacy_noise(export_df, dp_columns, epsilon)
+
+        if location_privacy.get('enabled'):
+            lat_col = column_info['latitude_column']
+            lon_col = column_info['longitude_column']
+            if not lat_col or not lon_col:
+                return jsonify({
+                    "status": "error",
+                    "message": "Location privacy requires both Latitude and Longitude columns to be selected"
+                }), 400
+            epsilon = float(location_privacy.get('epsilon', 5))
+            if epsilon <= 0:
+                return jsonify({"status": "error", "message": "epsilon must be greater than 0"}), 400
+            export_df = apply_location_privacy(export_df, lat_col, lon_col, epsilon)
+
+        csv_buffer = io.StringIO()
+        export_df.to_csv(csv_buffer, index=False)
+        csv_bytes = csv_buffer.getvalue().encode('utf-8')
+
+        dataset_name = dataset_document.get('dataset_name', 'dataset')
+        filename = f"{dataset_name}_selected_columns.csv"
+
+        return Response(
+            csv_bytes,
+            mimetype='text/csv',
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    except Exception as e:
+        logging.error(f'Unexpected error: {str(e)}')
+        logging.error(traceback.format_exc())
+        return jsonify({'message': 'An error occurred while exporting dataset', 'error': str(e)}), 500
+
 
 @app.route('/api/trainLocalModel', methods=['POST'])
 def train_local_model():
@@ -746,28 +1034,19 @@ def predict_eval():
             
             eval_data = np.array(json.loads(eval_data))
             
-            # model_logs = {}
-            # if 'model_logs' in model_info.keys():
-            #     model_logs = model_info['model_logs']
-            #     if user_id in model_logs.keys():
-            #         model_logs[user_id] = model_logs[user_id] + np.size(eval_data, 0)
-            #     else:
-            #         model_logs[user_id] = np.size(eval_data, 0)
-            # else:
-            #     model_logs = {
-            #         user_id:np.size(eval_data, 0)
-            #     }
-            # new_values = {
-            #     '$set': {
-            #         'model_logs': model_logs
-            #     }
-            # }
-            # print(model_logs,str(np.size(eval_data)))
-            # db['models'].update_one({"_id": ObjectId(model_info['_id'])}, new_values)
+            # user_id (a Tapis username) can contain dots (e.g. an email-style
+            # identity). Using it inside an f-string field path like
+            # f'model_logs.{user_id}' with $inc makes MongoDB split on every
+            # '.' and build nested subdocuments instead of a flat key, which
+            # later crashes the frontend when it expects model_logs values to
+            # be numbers. Build the dict in Python and $set it wholesale so
+            # the username is stored as a literal key, dots included.
+            model_logs = model_info.get('model_logs', {}) or {}
+            model_logs[user_id] = model_logs.get(user_id, 0) + np.size(eval_data, 0)
 
             db['models'].update_one({"_id": ObjectId(model_info['_id'])}, {
-                '$inc':{
-                    f'model_logs.{user_id}':np.size(eval_data, 0)
+                '$set':{
+                    'model_logs': model_logs
                 }
             })
             db['models'].update_one({"_id": ObjectId(model_info['_id'])}, {

@@ -415,7 +415,7 @@ const ModelRepository = ({userName}) => {
               <div id= 'modelInfoBox'>
                 {selectedModelInfo?selectedModelInfo.model_logs?Object.entries(selectedModelInfo?.model_logs).map(([key, value]) => (
                   <p key={key} id = 'modelInfoItem'>
-                    {key}:{value}
+                    {key}:{typeof value === 'object' && value !== null ? JSON.stringify(value) : value}
                   </p>
                 )):<p>No Information Available</p>:<p>No Information Available</p>}
               </div>

@@ -3,3 +3,6 @@
 app-server/.env
 farmer-server/.env
 param-server/.env
+farmer-server/__pycache__
+app-server/__pycache__
+param-server/__pycache__
