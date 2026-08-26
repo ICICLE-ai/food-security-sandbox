@@ -11,7 +11,7 @@ import pandas as pd
 import requests
 import numpy as np
 from sklearn.metrics.pairwise import pairwise_distances
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, join_room, emit, disconnect
 import json
 from bson import json_util
 
@@ -23,15 +23,15 @@ load_dotenv()
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})  # Apply to all routes
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
 # MongoDB connection
-# mongo_uri = os.getenv('MONGODB_URI', 'mongodb://mongodb:27017/digital_agriculture')
+# mongo_uri = os.getenv('MONGODB_URI', 'mongodb://mongodb:27017/collaborative_research')
 # app_settings.sandbox_server_url = os.getenv('app_settings.sandbox_server_url', 'http://localhost:5001')
 # app_settings.param_server_url = os.getenv('app_settings.param_server_url', 'http://localhost:5002')
 
 client = MongoClient(app_settings.mongodb_uri)
-db = client.digital_agriculture
+db = client.collaborative_research
 messages_collection = db['messages']
 
 @app.route('/api/auth/login', methods=['GET'])
@@ -101,6 +101,39 @@ def get_username(token):
         raise Exception(f"Error looking up token info; debug: {e}")
     return username
 
+
+@socketio.on('connect')
+def handle_connect(auth):
+    """
+    Authenticate a Socket.IO connection the same way REST routes do:
+    resolve the Tapis token to a username and confirm there's a valid
+    session, then join a private room named after that username so
+    chat events can be pushed to them by username alone.
+    """
+    token = (auth or {}).get('token')
+    if not token:
+        disconnect()
+        return False
+
+    try:
+        username = get_username(token)
+        session = db.sessions.find_one({"username": username})
+        if not session:
+            disconnect()
+            return False
+
+        expires_at = datetime.datetime.fromisoformat(session['tapis_token']['expires_at'])
+        if datetime.datetime.now(datetime.timezone.utc) > expires_at:
+            disconnect()
+            return False
+    except Exception as e:
+        logging.error(f'Socket auth failed: {str(e)}')
+        disconnect()
+        return False
+
+    join_room(username)
+
+
 @app.route('/api/oauth2/callback', methods=['GET'])
 def callback():
     """
@@ -151,8 +184,8 @@ def callback():
     return redirect(auth_settings.app_base_url+"/?tapis_token="+str(token)+"&username="+str(username), code=302)
 
 
-@app.route('/api/get_similar_farmers', methods=['POST'])
-def get_similar_farmers():
+@app.route('/api/get_similar_participants', methods=['POST'])
+def get_similar_participants():
     try:
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
@@ -260,7 +293,7 @@ def get_messages():
                 {"senderID": sender_id, "receiverID": receiver_id},
                 {"senderID": receiver_id, "receiverID": sender_id}
             ]
-        })
+        }).sort("timestamp", 1)
 
         # Formatting the response
         messages_list = []
@@ -314,6 +347,8 @@ def send_message():
         }
 
         db['messages'].insert_one(message)
+        socketio.emit('new_message', message, room=message["receiverID"])
+        socketio.emit('new_message', message, room=message["senderID"])
         return jsonify({"status": "Message sent"}), 201
     except Exception as e:
         logging.error(f'Unexpected error: {str(e)}')
@@ -370,7 +405,7 @@ def get_conversations():
                 conversation_partners[partner_id] = {
                     'partner_id': partner_id,
                     'timestamp': timestamp,
-                    'last_message': message.get('content', '')
+                    'last_message': message.get('message', '')
                 }
         # Convert to list and sort by timestamp
         sorted_partners = sorted(
@@ -632,6 +667,6 @@ def test():
     
     return jsonify(json.dumps('Done', default=str)), 200
 if __name__ == '__main__':
-    app.run(host=app_settings.host, port=app_settings.port, debug=app_settings.debug)
+    socketio.run(app, host=app_settings.host, port=app_settings.port, debug=app_settings.debug, allow_unsafe_werkzeug=True)
 
 

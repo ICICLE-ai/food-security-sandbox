@@ -5,15 +5,14 @@ import axios from 'axios';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import './Login.css';
 import tacc_logo from '../../tacc-black.png'
-import loginBG from "../../assets/loginBG.jpg"
 import PropTypes from 'prop-types';
 
 const WhiteButton = styled(Button)({
   background: '#fff',
-  color: '#008000',
-  border: '1px solid #008000',
+  color: '#2E3A54',
+  border: '1px solid #2E3A54',
   '&:hover': {
-    background: '#008000',
+    background: '#2E3A54',
     color: '#fff',
   },
 });
@@ -82,10 +81,7 @@ const Login = ({ setIsAuthenticated }) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundImage: `url(${loginBG})`,
-        backgroundRepeat: 'no-repeat',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        background: 'radial-gradient(circle at 15% 20%, rgba(46, 58, 84, 0.16), transparent 45%), radial-gradient(circle at 85% 80%, rgba(184, 134, 59, 0.14), transparent 50%), #FAF8F4',
         zIndex: 0,
       }}
     >
@@ -98,12 +94,12 @@ const Login = ({ setIsAuthenticated }) => {
           borderRadius: '50%',
           padding: 2
         }}>
-          <CircularProgress size={60} sx={{ color: '#008000' }} />
+          <CircularProgress size={60} sx={{ color: '#2E3A54' }} />
         </Box>
       ) : (
         <Container component="main" maxWidth="xs">
           <Box sx={{ 
-            border: '1px dashed #ccc', 
+            border: '1px dashed #D8D2C4',
             borderRadius: 5, 
             padding: 3, 
             width: '100%', 
@@ -164,9 +160,9 @@ const Login = ({ setIsAuthenticated }) => {
                 sx={{ 
                   mt: 3, 
                   mb: 2,
-                  backgroundColor: '#008000',
+                  backgroundColor: '#2E3A54',
                   '&:hover': {
-                    backgroundColor: '#009900',
+                    backgroundColor: '#1E2740',
                   }
                 }}
               >
@@ -180,9 +176,9 @@ const Login = ({ setIsAuthenticated }) => {
                 variant="text" 
                 sx={{ 
                   mb: 1,
-                  color: '#008000',
+                  color: '#2E3A54',
                   '&:hover': {
-                    backgroundColor: 'rgba(0, 128, 0, 0.04)', // Light green background on hover
+                    backgroundColor: 'rgba(46, 58, 84, 0.06)',
                   }
                 }}
               >

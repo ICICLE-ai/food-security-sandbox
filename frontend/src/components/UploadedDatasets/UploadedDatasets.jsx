@@ -39,7 +39,7 @@ const UploadedDatasets = ({userName, setSelectedDataset, update}) => {
     try {
       
       const response = await axios.get(
-        `${process.env.REACT_APP_FARMER_API_URL}/api/delete_dataset`,
+        `${process.env.REACT_APP_PARTICIPANT_API_URL}/api/delete_dataset`,
         {
           params: { datasetId },
           headers: {
@@ -67,7 +67,7 @@ const UploadedDatasets = ({userName, setSelectedDataset, update}) => {
     const fetchDatasets = async () => {
       try {
 
-        axios.get(`${process.env.REACT_APP_FARMER_API_URL}/api/get_user_datasets`, {
+        axios.get(`${process.env.REACT_APP_PARTICIPANT_API_URL}/api/get_user_datasets`, {
           headers: {
           'Authorization': `Bearer ${localStorage.getItem('tapis_token')}`
           }
@@ -113,19 +113,22 @@ const UploadedDatasets = ({userName, setSelectedDataset, update}) => {
                 alignItems="center"
                 key={index} 
                 onClick={() => setSelectedDataset(dataset._id)}
-                sx={{ 
-                  border: '1px solid #ccc', // Add border
-                  borderRadius: 1, // Optional: rounded corners
-                  mb: 1, // Optional: margin bottom for spacing between items
-                  padding: 1, // Optional: padding for better spacing
-                  cursor: 'pointer', // Ensures that the cursor is a hand on hover
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 1,
+                  mb: 1,
+                  padding: 1,
+                  cursor: 'pointer',
+                  transition: 'background-color 0.16s ease, transform 0.16s ease',
                   '&:hover': {
-                    backgroundColor: '#f0f0f0', // Optional: change background color on hover
-                  }
+                    backgroundColor: 'action.hover',
+                    transform: 'translateY(-1px)',
+                  },
                 }}
                 >
                 <ListItemAvatar>
-                  <Avatar sx={{ bgcolor: '#008000' }}>
+                  <Avatar sx={{ bgcolor: 'primary.main' }}>
                     <DatasetIcon />
                   </Avatar>
                 </ListItemAvatar>

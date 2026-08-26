@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button, IconButton, Tooltip, Avatar, Menu, MenuItem, Badge } from "@mui/material";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { Link as RouterLink, useNavigate, useLocation } from "react-router-dom";
 import axios from 'axios';
+import socket from '../../socket';
 
 
 export default function LoggedIn({ onLogout }) {
@@ -12,7 +13,26 @@ export default function LoggedIn({ onLogout }) {
   const open = Boolean(anchorEl);
   const collabOpen = Boolean(collabAnchorEl);
   const navigate = useNavigate();
+  const location = useLocation();
   const token = localStorage.getItem('tapis_token');
+
+  const pathnameRef = useRef(location.pathname);
+  useEffect(() => {
+    pathnameRef.current = location.pathname;
+    if (location.pathname === '/chat') {
+      setPendingCount(0);
+    }
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const handleNewMessage = (msg) => {
+      if (msg.receiverID === userName && pathnameRef.current !== '/chat') {
+        setPendingCount((prev) => prev + 1);
+      }
+    };
+    socket.on('new_message', handleNewMessage);
+    return () => socket.off('new_message', handleNewMessage);
+  }, [userName]);
 
 
   const handleClick = (event) => {
@@ -42,7 +62,9 @@ export default function LoggedIn({ onLogout }) {
     <>
       <Button color="inherit" component={RouterLink} to="/">Home</Button>
       <Button color="inherit" component={RouterLink} to="/training">Collaborative Machine Learning</Button>
-      <Button color="inherit" component={RouterLink} to="/chat">Chat</Button>
+      <Badge badgeContent={pendingCount} color="error" overlap="rectangular">
+        <Button color="inherit" component={RouterLink} to="/chat">Chat</Button>
+      </Badge>
       <Button color="inherit" component={RouterLink} to="/dataSharing">Data Sharing</Button>
       
 

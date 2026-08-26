@@ -1,9 +1,7 @@
-// web_application/Frontend/src/components/Training/TrainingComponent.jsx
 import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { Typography, Box, Grid, Snackbar, CircularProgress } from '@mui/material';
 import UploadForm from '../Upload/Upload';
-import SimilarFarmers from '../SimilarFarmers/SimilarFarmers';
 import UploadedDatasets from '../UploadedDatasets/UploadedDatasets';
 import ModelTraining from '../ModelTraining/ModelTraining';
 import ModelRepository from '../ModelRepository/ModelRepository'
@@ -67,7 +65,7 @@ const CollaborativeML = () => {
         borderRadius: '50%',
         padding: 2
       }}>
-        <CircularProgress size={60} sx={{ color: '#008000' }} />
+        <CircularProgress size={60} sx={{ color: 'primary.main' }} />
       </Box>
     </Box>
   );
@@ -90,8 +88,8 @@ const CollaborativeML = () => {
         variant="h4" 
         gutterBottom 
         sx={{ 
-          fontWeight: 'bold', 
-          color: '#333', 
+          fontWeight: 'bold',
+          color: 'text.primary',
           justifyContent: 'center', 
           display: 'flex',
           mb: 2
@@ -102,7 +100,7 @@ const CollaborativeML = () => {
       <Grid container spacing={2} justifyContent="center" >
         <Grid item xs={12} sm={6} size={6}>
           <Box sx={{ 
-            border: '1px solid #ccc', 
+            border: '1px solid', borderColor: 'divider',
             p: 2, 
             m: 1,
             borderRadius: 2, 
@@ -119,7 +117,7 @@ const CollaborativeML = () => {
         </Grid>
         <Grid item xs={12} sm={6} size={6}>
           <Box sx={{ 
-            border: '1px solid #ccc', 
+            border: '1px solid', borderColor: 'divider',
             p: 2, 
             m: 1,
             borderRadius: 2, 

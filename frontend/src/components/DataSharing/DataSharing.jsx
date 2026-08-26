@@ -51,7 +51,7 @@ const DataSharing = () => {
     const fetchDatasets = async () => {
       try {
         const response = await axios.get(
-          `${process.env.REACT_APP_FARMER_API_URL}/api/get_user_datasets`,
+          `${process.env.REACT_APP_PARTICIPANT_API_URL}/api/get_user_datasets`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem('tapis_token')}`
@@ -91,7 +91,7 @@ const DataSharing = () => {
     const fetchColumnInfo = async () => {
       try {
         const response = await axios.post(
-          `${process.env.REACT_APP_FARMER_API_URL}/api/get_dataset_column_info`,
+          `${process.env.REACT_APP_PARTICIPANT_API_URL}/api/get_dataset_column_info`,
           { datasetId: selectedDatasetId },
           {
             headers: {
@@ -162,7 +162,7 @@ const DataSharing = () => {
     try {
       setCheckingKAnonymity(true);
       const response = await axios.post(
-        `${process.env.REACT_APP_FARMER_API_URL}/api/check_k_anonymity`,
+        `${process.env.REACT_APP_PARTICIPANT_API_URL}/api/check_k_anonymity`,
         {
           datasetId: selectedDatasetId,
           direct_ids: selectedDirectIds
@@ -212,7 +212,7 @@ const DataSharing = () => {
     try {
       setExporting(true);
       const response = await axios.post(
-        `${process.env.REACT_APP_FARMER_API_URL}/api/export_dataset_columns`,
+        `${process.env.REACT_APP_PARTICIPANT_API_URL}/api/export_dataset_columns`,
         {
           datasetId: selectedDatasetId,
           columns: selectedDirectIds,
@@ -295,7 +295,7 @@ const DataSharing = () => {
         gutterBottom
         sx={{
           fontWeight: 'bold',
-          color: '#333',
+          color: 'text.primary',
           justifyContent: 'center',
           display: 'flex',
           mb: 3
@@ -308,10 +308,11 @@ const DataSharing = () => {
         sx={{
           maxWidth: '900px',
           margin: '0 auto',
-          border: '1px solid #ccc',
+          border: '1px solid',
+          borderColor: 'divider',
           borderRadius: 2,
           p: 3,
-          backgroundColor: '#fff'
+          backgroundColor: 'background.paper'
         }}
       >
         <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
@@ -320,7 +321,7 @@ const DataSharing = () => {
 
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress sx={{ color: '#008000' }} />
+            <CircularProgress sx={{ color: 'primary.main' }} />
           </Box>
         ) : datasets.length === 0 ? (
           <Typography variant="body1">No uploaded datasets found.</Typography>
@@ -331,18 +332,21 @@ const DataSharing = () => {
                 key={dataset._id}
                 onClick={() => setSelectedDatasetId(dataset._id)}
                 sx={{
-                  border: selectedDatasetId === dataset._id ? '2px solid #008000' : '1px solid #ccc',
+                  border: selectedDatasetId === dataset._id ? '2px solid' : '1px solid',
+                  borderColor: selectedDatasetId === dataset._id ? 'primary.main' : 'divider',
                   borderRadius: 1,
                   mb: 1,
                   cursor: 'pointer',
-                  backgroundColor: selectedDatasetId === dataset._id ? '#f3faf3' : '#fff',
+                  backgroundColor: selectedDatasetId === dataset._id ? 'action.selected' : 'background.paper',
+                  transition: 'background-color 0.16s ease, transform 0.16s ease',
                   '&:hover': {
-                    backgroundColor: '#f0f0f0'
+                    backgroundColor: 'action.hover',
+                    transform: 'translateY(-1px)',
                   }
                 }}
               >
                 <ListItemAvatar>
-                  <Avatar sx={{ bgcolor: '#008000' }}>
+                  <Avatar sx={{ bgcolor: 'primary.main' }}>
                     <DatasetIcon />
                   </Avatar>
                 </ListItemAvatar>
@@ -369,9 +373,9 @@ const DataSharing = () => {
               checked={privacyEnabled}
               onChange={(event) => setPrivacyEnabled(event.target.checked)}
               sx={{
-                color: '#008000',
+                color: 'primary.main',
                 '&.Mui-checked': {
-                  color: '#008000'
+                  color: 'primary.main'
                 }
               }}
             />
@@ -383,11 +387,12 @@ const DataSharing = () => {
         {privacyEnabled && selectedDatasetId && selectedDatasetMetadata.length > 0 && (
           <Box
             sx={{
-              border: '1px solid #ddd',
+              border: '1px solid',
+              borderColor: 'divider',
               borderRadius: 1,
               p: 2,
               mb: 2,
-              backgroundColor: '#fafafa'
+              backgroundColor: 'background.default'
             }}
           >
             <Typography variant="subtitle1" sx={{ mb: 1 }}>
@@ -405,9 +410,9 @@ const DataSharing = () => {
                       checked={selectedDirectIds.includes(columnName)}
                       onChange={() => handleToggleDirectId(columnName)}
                       sx={{
-                        color: '#008000',
+                        color: 'primary.main',
                         '&.Mui-checked': {
-                          color: '#008000'
+                          color: 'primary.main'
                         }
                       }}
                     />
@@ -423,9 +428,9 @@ const DataSharing = () => {
                 onClick={handleCheckKAnonymity}
                 disabled={loading || checkingKAnonymity || selectedDirectIds.length === 0}
                 sx={{
-                  color: '#008000',
-                  borderColor: '#008000',
-                  '&:hover': { borderColor: '#009900', backgroundColor: '#f3faf3' },
+                  color: 'primary.main',
+                  borderColor: 'primary.main',
+                  '&:hover': { borderColor: 'primary.dark', backgroundColor: 'action.hover' },
                   borderRadius: 2,
                   px: 3
                 }}
@@ -440,8 +445,9 @@ const DataSharing = () => {
                   mt: 2,
                   p: 1.5,
                   borderRadius: 1,
-                  border: '1px solid #ddd',
-                  backgroundColor: kAnonymityResult.is_k_anonymous ? '#f3faf3' : '#fdf3f3'
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  backgroundColor: kAnonymityResult.is_k_anonymous ? 'success.light' : 'error.light'
                 }}
               >
                 <Typography variant="body2">
@@ -472,7 +478,7 @@ const DataSharing = () => {
                         <Switch
                           checked={dpEnabled}
                           onChange={(event) => setDpEnabled(event.target.checked)}
-                          sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#008000' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#008000' } }}
+                          sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: 'primary.main' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: 'primary.main' } }}
                         />
                       }
                       label="Differential Privacy (add noise to numeric columns)"
@@ -493,8 +499,8 @@ const DataSharing = () => {
                                   checked={!excludedDpColumns.includes(columnName)}
                                   onChange={() => handleToggleDpColumn(columnName)}
                                   sx={{
-                                    color: '#008000',
-                                    '&.Mui-checked': { color: '#008000' }
+                                    color: 'primary.main',
+                                    '&.Mui-checked': { color: 'primary.main' }
                                   }}
                                 />
                               }
@@ -514,7 +520,7 @@ const DataSharing = () => {
                       <Switch
                         checked={locationPrivacyEnabled}
                         onChange={(event) => setLocationPrivacyEnabled(event.target.checked)}
-                        sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#008000' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#008000' } }}
+                        sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: 'primary.main' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: 'primary.main' } }}
                       />
                     }
                     label="Location Privacy (anonymize GPS coordinates)"
@@ -533,7 +539,7 @@ const DataSharing = () => {
                       max={10}
                       step={0.1}
                       valueLabelDisplay="auto"
-                      sx={{ color: '#008000', maxWidth: 400 }}
+                      sx={{ color: 'primary.main', maxWidth: 400 }}
                     />
                   </Box>
                 )}
@@ -549,8 +555,8 @@ const DataSharing = () => {
             onClick={handleExportSelectedColumns}
             disabled={loading || datasets.length === 0 || exporting}
             sx={{
-              backgroundColor: '#008000',
-              '&:hover': { backgroundColor: '#009900' },
+              backgroundColor: 'primary.main',
+              '&:hover': { backgroundColor: 'primary.dark' },
               borderRadius: 2,
               px: 3
             }}

@@ -32,9 +32,9 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})  # Apply to all routes
 
 # MongoDB connection
-# mongo_uri = os.getenv('MONGODB_URI', 'mongodb://mongodb:27017/digital_agriculture')
+# mongo_uri = os.getenv('MONGODB_URI', 'mongodb://mongodb:27017/collaborative_research')
 client = MongoClient(app_settings.mongodb_uri)
-db = client.digital_agriculture
+db = client.collaborative_research
 epsilon = 5
 
 def load_PCA_model():
@@ -172,7 +172,7 @@ def get_username(token):
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    return jsonify({"status": "healthy", "service": "farmer-server"})
+    return jsonify({"status": "healthy", "service": "participant-server"})
 
 
 @app.route('/api/get_user_datasets', methods=['GET'])
@@ -392,10 +392,10 @@ def load_datasets():
             results = {}
             
             while not result_queue.empty():
-                farmer_id, noisyX, noisyY = result_queue.get()
+                participant_id, noisyX, noisyY = result_queue.get()
                 if noisyX is None and noisyY is None:
                     continue
-                results[farmer_id] = {"noisyX":noisyX.tolist(), "noisyY" : noisyY.tolist()}
+                results[participant_id] = {"noisyX":noisyX.tolist(), "noisyY" : noisyY.tolist()}
 
             return jsonify(results)
              

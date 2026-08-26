@@ -1,4 +1,3 @@
-// web_application/Frontend/src/components/Training/TrainingComponent.jsx
 import React, { useState, useEffect } from 'react';
 import { Box, Button, Typography, Snackbar, Avatar, TextField } from '@mui/material';
 import axios from 'axios';
@@ -18,9 +17,9 @@ const ModelTraining = ({userName, selectedDataset}) => {
   const token = localStorage.getItem('tapis_token');
 
   useEffect(() => {
-    const fetchSimilarFarmers = async () => {
+    const fetchSimilarParticipants = async () => {
       console.log('Identifying Collaborators')
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/get_similar_farmers`, {selectedDataset},{
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/get_similar_participants`, {selectedDataset},{
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -31,7 +30,7 @@ const ModelTraining = ({userName, selectedDataset}) => {
       setCollaborators(response.data.collaborators);
       setSelectedCollaborators(response.data.collaborators);
     }
-    fetchSimilarFarmers();
+    fetchSimilarParticipants();
 
   }, []);
 
@@ -162,7 +161,7 @@ const ModelTraining = ({userName, selectedDataset}) => {
                     onChange={() => handleCollaboratorToggle(collaborator)}
                     className="collaborator-checkbox"
                   />
-                  <Avatar className='collaborator-avatar' sx={{ width: 30, height: 30, bgcolor: '#008000' }}>
+                  <Avatar className='collaborator-avatar' sx={{ width: 30, height: 30, bgcolor: 'primary.main' }}>
                     <PersonIcon />
                   </Avatar>
                   <label className="collaborator-name">{collaborator.username}</label>
@@ -176,9 +175,9 @@ const ModelTraining = ({userName, selectedDataset}) => {
           variant="contained"
           onClick={handleStartTraining}
           sx={{ 
-            backgroundColor: '#008000',
+            backgroundColor: 'primary.main',
             '&:hover': {
-              backgroundColor: '#009900',
+              backgroundColor: 'primary.dark',
             },
             px: 4,
             minWidth: 'fit-content',

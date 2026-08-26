@@ -59,7 +59,7 @@ const UploadForm = ({setUpdate}) => {
             formData.append('field1', field1);
             formData.append('file', csvFile);
 
-            const response = await axios.post(`${process.env.REACT_APP_FARMER_API_URL}/api/upload_csv`, formData, {
+            const response = await axios.post(`${process.env.REACT_APP_PARTICIPANT_API_URL}/api/upload_csv`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                     'Authorization': `Bearer ${token}`
@@ -86,7 +86,7 @@ const UploadForm = ({setUpdate}) => {
     return (
         <Container component="div" maxWidth="sm" sx={{ padding: 4, borderRadius: 2 }}>
             <Typography variant="h4" align="center" gutterBottom sx={{ fontWeight: 'light' }}>
-                Farm Dataset Upload
+                Dataset Upload
             </Typography>
             <form onSubmit={handleSubmit}>
                 <TextField
@@ -101,16 +101,17 @@ const UploadForm = ({setUpdate}) => {
                 />
                 <Box
                     sx={{
-                        border: '2px dashed #ccc',
+                        border: '2px dashed',
+                        borderColor: 'divider',
                         borderRadius: '8px',
                         padding: 2,
                         textAlign: 'center',
                         marginTop: 2,
-                        backgroundColor: '#fafafa',
+                        backgroundColor: 'background.default',
                         cursor: 'pointer',
                         transition: 'background-color 0.3s',
                         '&:hover': {
-                            backgroundColor: '#f0f0f0',
+                            backgroundColor: 'action.hover',
                         },
                     }}
                     onDrop={handleDrop}
@@ -126,23 +127,23 @@ const UploadForm = ({setUpdate}) => {
                     <label htmlFor="csv-file-input" style={{ display: 'block', cursor: 'pointer' }}>
                         <IconButton 
                             component="span"
-                            sx={{ 
-                                color: '#008000',
+                            sx={{
+                                color: 'primary.main',
                                 '&:hover': {
-                                    color: '#009900',
+                                    color: 'primary.dark',
                                 }
                             }}
                         >
                             <CloudUploadIcon sx={{ fontSize: 40 }} />
                         </IconButton>
                         <Typography variant="body1">
-                            {fileName || 'Upload Farm Dataset'}
+                            {fileName || 'Upload Dataset'}
                         </Typography>
                     </label>
                 </Box>
                 {loading ? (
                     <Box display="flex" justifyContent="center" alignItems="center" mt={2} sx={{
-                        backgroundColor: '#fafafa',
+                        backgroundColor: 'background.default',
                     }}>
                         <CircularProgress />
                     </Box>
@@ -156,9 +157,9 @@ const UploadForm = ({setUpdate}) => {
                             padding: 2, 
                             fontSize: '1rem', 
                             borderRadius: 100,
-                            backgroundColor: '#008000',
+                            backgroundColor: 'primary.main',
                             '&:hover': {
-                                backgroundColor: '#009900',
+                                backgroundColor: 'primary.dark',
                             }
                         }}
                     >

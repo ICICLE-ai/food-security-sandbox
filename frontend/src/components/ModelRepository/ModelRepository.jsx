@@ -172,9 +172,15 @@ const ModelRepository = ({userName}) => {
         <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
           {models.map((model, index) => (
             <React.Fragment key={index}>
-              <ListItem alignItems="center">
+              <ListItem
+                alignItems="center"
+                sx={{
+                  transition: 'background-color 0.16s ease, transform 0.16s ease',
+                  '&:hover': { backgroundColor: 'action.hover', transform: 'translateY(-1px)' },
+                }}
+              >
                 <ListItemAvatar>
-                  <Avatar sx={{ bgcolor: '#008000' }}>
+                  <Avatar sx={{ bgcolor: 'primary.main' }}>
                     <PersonIcon />
                   </Avatar>
                 </ListItemAvatar>
@@ -215,7 +221,7 @@ const ModelRepository = ({userName}) => {
                       margin: '0 2px' 
                     }}
                   >
-                      <GppMaybeIcon sx={{ color: 'red' }} />
+                      <GppMaybeIcon sx={{ color: 'error.main' }} />
                   </Button>
                   <Button 
                       onClick={(event) => {
@@ -355,12 +361,12 @@ const ModelRepository = ({userName}) => {
             </div>
             <Typography className='modalButtonBox'>
             <Button sx={{
-              bgcolor: '#1976d2',
-              color: 'white',
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
               px: 6,
               mt: 2,
               '&:hover': {
-                              bgcolor: '#1565c0'
+                              bgcolor: 'primary.dark'
                             }
                           }}
                           
@@ -471,10 +477,10 @@ const ModelRepository = ({userName}) => {
 
 const ModelVisibilityIcon = ({modelVisibility}) => {
   if (modelVisibility == 'Public'){
-    return (<VisibilityIcon sx={{ color: '#008000' }}/>)
+    return (<VisibilityIcon sx={{ color: 'primary.main' }}/>)
   }
   else{
-    return (<VisibilityOffIcon sx={{ color: '#CC0000' }}/>)
+    return (<VisibilityOffIcon sx={{ color: 'error.main' }}/>)
   }
     
 }

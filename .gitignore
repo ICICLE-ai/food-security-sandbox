@@ -1,9 +1,9 @@
 .env
 .env.*
 app-server/.env
-farmer-server/.env
+participant-server/.env
 param-server/.env
-farmer-server/__pycache__
+participant-server/__pycache__
 app-server/__pycache__
 param-server/__pycache__
 graphify-out

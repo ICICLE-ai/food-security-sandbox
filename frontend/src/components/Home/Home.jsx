@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Typography, List, ListItem, ListItemIcon, Box, Grid, Snackbar, CircularProgress } from '@mui/material';
 import UploadForm from '../Upload/Upload';
-import SimilarFarmers from '../SimilarFarmers/SimilarFarmers';
+import SimilarParticipants from '../SimilarParticipants/SimilarParticipants';
 import UploadedDatasets from '../UploadedDatasets/UploadedDatasets';
 import FunctionsIcon from '@mui/icons-material/Functions';
 
@@ -18,10 +18,10 @@ const HomePage = () => {
   const [selectedFunction, setSelectedFunction] = useState('')
   const [onFunctionSelected, setOnFunctionSelected] = useState(false)
   const functions = [
-    { name: 'Finding Similar Farmers', logo: <FunctionsIcon fontSize='large'/> },
-    { name: 'Link Public Private Dataset For Farmer ', logo: <FunctionsIcon fontSize='large'/> },
-    { name: 'Link Public Private Dataset For Food Security', logo: <FunctionsIcon fontSize='large'/> },
-    { name: 'Link Farm2Fact to Production Data', logo: <FunctionsIcon fontSize='large'/> },
+    { name: 'Find Similar Participants', logo: <FunctionsIcon fontSize='large'/> },
+    { name: 'Link Public & Private Datasets', logo: <FunctionsIcon fontSize='large'/> },
+    { name: 'Link Datasets Across Research Groups', logo: <FunctionsIcon fontSize='large'/> },
+    { name: 'Link to Production Data Pipeline', logo: <FunctionsIcon fontSize='large'/> },
     // Add more functions as needed
   ];
   const navigate = useNavigate();
@@ -80,7 +80,7 @@ const HomePage = () => {
         borderRadius: '50%',
         padding: 2
       }}>
-        <CircularProgress size={60} sx={{ color: '#008000' }} />
+        <CircularProgress size={60} sx={{ color: 'primary.main' }} />
       </Box>
     </Box>
   );
@@ -103,8 +103,8 @@ const HomePage = () => {
         variant="h4" 
         gutterBottom 
         sx={{ 
-          fontWeight: 'bold', 
-          color: '#333', 
+          fontWeight: 'bold',
+          color: 'text.primary',
           justifyContent: 'center', 
           display: 'flex',
           mb: 2
@@ -126,13 +126,13 @@ const HomePage = () => {
               key={index}
               onClick={() => {setSelectedFunction(func.name); setOnFunctionSelected(true)}} 
               sx={{ 
-                border: '1px solid #ccc', // Add border
+                border: '1px solid', borderColor: 'divider',// Add border
                 borderRadius: 1, // Optional: rounded corners
                 mb: 1, // Optional: margin bottom for spacing between items
                 padding: 1, // Optional: padding for better spacing
                 cursor: 'pointer', // Ensures that the cursor is a hand on hover
                 '&:hover': {
-                  backgroundColor: '#f0f0f0', // Optional: change background color on hover
+                  backgroundColor: 'action.hover', // Optional: change background color on hover
                 }
               }}
             >
@@ -147,7 +147,7 @@ const HomePage = () => {
       <Grid container spacing={2} justifyContent="center">
         <Grid item xs={12} sm={6}>
           <Box sx={{ 
-            border: '1px solid #ccc', 
+            border: '1px solid', borderColor: 'divider',
             p: 2, 
             m: 1,
             borderRadius: 2, 
@@ -159,7 +159,7 @@ const HomePage = () => {
         </Grid>
         <Grid item xs={12} sm={6}>
           <Box sx={{ 
-            border: '1px solid #ccc', 
+            border: '1px solid', borderColor: 'divider',
             p: 2, 
             m: 1,
             borderRadius: 2, 
@@ -169,7 +169,7 @@ const HomePage = () => {
             {selectedDataset == ""?
               <UploadedDatasets  userName={userName} setSelectedDataset={setSelectedDataset} update={update}/>
               :
-              <SimilarFarmers userName={userName} selectedDataset={selectedDataset} userID={userID}/>
+              <SimilarParticipants userName={userName} selectedDataset={selectedDataset} userID={userID}/>
             }
           </Box>
         </Grid>

@@ -1,10 +1,10 @@
-# Food Security Sandbox
+# Collaborative Research Sandbox
 
-A collaborative machine learning platform for agricultural data analysis and model training with privacy-preserving features.
+A domain-agnostic collaborative machine learning platform for data analysis and model training with privacy-preserving features.
 
 ## Project Description
 
-The Food Security Sandbox is a comprehensive web application that enables farmers and researchers to collaborate on machine learning models while preserving data privacy. The platform provides tools for dataset management, collaborative model training, and privacy risk analysis in agricultural contexts.
+The Collaborative Research Sandbox is a comprehensive web application that enables researchers and collaborators to work on machine learning models together while preserving data privacy. The platform provides tools for dataset management, collaborative model training, and privacy risk analysis — usable across any research domain.
 
 **Key Features:**
 - Dataset upload and management
@@ -12,19 +12,19 @@ The Food Security Sandbox is a comprehensive web application that enables farmer
 - Privacy-preserving data sharing
 - Model repository with risk analysis
 - Chat for collaboration
-- Similar farmer identification
+- Similar participant identification
 
 ## Tags
 
 **PADI** 
 
-**Digital-Agriculture** 
+**Collaborative-Research** 
 
 ## License
 
 MIT License
 
-Copyright (c) 2025 Food Security Sandbox
+Copyright (c) 2025 Collaborative Research Sandbox
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## References
@@ -55,7 +55,7 @@ This research was supported in part by the National Science Foundation (NSF) und
 
 ## Tutorials
 
-### Getting Started with the Food Security Sandbox
+### Getting Started with the Collaborative Research Sandbox
 
 #### Prerequisites
 - Docker and Docker Compose installed
@@ -73,7 +73,7 @@ This research was supported in part by the National Science Foundation (NSF) und
 
 2. **Config Environment**
    Create .env file in app-server with the following keys:
-   - MONGODB_URI=mongodb://mongodb:27017/digital_agriculture
+   - MONGODB_URI=mongodb://mongodb:27017/collaborative_research
    - CLIENT_ID= your client id
    - CLIENT_KEY= your client key
    - TAPIS_BASE_URL=https://icicleai.tapis.io
@@ -81,19 +81,19 @@ This research was supported in part by the National Science Foundation (NSF) und
    - APP_BASE_URL=http://localhost:3000
    - CALLBACK_URL=http://localhost:5003/api/oauth2/callback
      
-   Create .env files in farmer-server and param-server with the following keys:
+   Create .env files in participant-server and param-server with the following keys:
    - TAPIS_BASE_URL=https://icicleai.tapis.io
    - TENANT=icicleai
 
 3. **Start the Application**
    ```bash
-   docker compose -p digital-agriculture-sandbox up --build
+   docker compose up --build
    ```
 
 4. **Access the Application**
    - Frontend: http://localhost:3000
    - App Server: http://localhost:5003
-   - Farmer Server: http://localhost:5001
+   - Participant Server: http://localhost:5001
    - Param Server: http://localhost:5002
 
 5. **Authentication**
@@ -107,14 +107,14 @@ This research was supported in part by the National Science Foundation (NSF) und
 
 ### How to Upload a Dataset
 
-**Problem**: You need to upload agricultural data for analysis and model training.
+**Problem**: You need to upload data for analysis and model training.
 
 **Solution**:
 1. Navigate to the Home page
-2. Click on "Finding Similar Farmers" function
+2. Click on "Find Similar Participants" function
 3. In the left panel, use the upload form
 4. Enter a dataset name
-5. Select a CSV file with your agricultural data
+5. Select a CSV file with your data
 6. Click "Upload Dataset"
 
 **Troubleshooting**:
@@ -124,7 +124,7 @@ This research was supported in part by the National Science Foundation (NSF) und
 
 ### How to Train a Collaborative Model
 
-**Problem**: You want to train a machine learning model using data from multiple farmers while preserving privacy.
+**Problem**: You want to train a machine learning model using data from multiple participants while preserving privacy.
 
 **Solution**:
 1. Navigate to "Collaborative Machine Learning"
@@ -162,11 +162,11 @@ This research was supported in part by the National Science Foundation (NSF) und
 
 ### System Architecture
 
-The Food Security Sandbox follows a microservices architecture with four main components:
+The Collaborative Research Sandbox follows a microservices architecture with four main components:
 
 1. **Frontend (React.js)**: User interface for data upload, model training, and collaboration
 2. **App Server (Flask)**: Main application server handling authentication and coordination
-3. **Farmer Server (Flask)**: Handles dataset management and privacy-preserving operations
+3. **Participant Server (Flask)**: Handles dataset management and privacy-preserving operations
 4. **Param Server (Flask)**: Manages model training and parameter aggregation
 
 ### Privacy-Preserving Mechanisms
@@ -180,8 +180,8 @@ The system implements several privacy-preserving techniques:
 
 ### Collaborative Learning Workflow
 
-1. **Data Preparation**: Farmers upload datasets with metadata
-2. **Similarity Matching**: System identifies farmers with similar data characteristics
+1. **Data Preparation**: Participants upload datasets with metadata
+2. **Similarity Matching**: System identifies participants with similar data characteristics
 3. **Privacy Enhancement**: Data is processed with differential privacy techniques
 4. **Model Training**: Collaborative model training using federated learning principles
 5. **Risk Assessment**: Privacy risks are analyzed and reported

@@ -1,60 +1,62 @@
+name: collaborative-research-sandbox
+
 services:
   frontend:
     build: ./frontend
-    image: ghcr.io/icicle-ai/food-security-system-frontend:latest
+    image: ghcr.io/icicle-ai/collaborative-research-sandbox-frontend:latest
     ports:
       - "3000:3000"
     environment:
-      - REACT_APP_API_URL=http://digital-agriculture-sandbox-app-server-1:5003
-      - REACT_APP_FARMER_API_URL=http://digital-agriculture-sandbox-farmer-server-1:5001
+      - REACT_APP_API_URL=http://collaborative-research-sandbox-app-server-1:5003
+      - REACT_APP_PARTICIPANT_API_URL=http://collaborative-research-sandbox-participant-server-1:5001
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
       - NODE_ENV=development
       #for production, set NODE_ENV=production
     depends_on:
       - app-server
-      - farmer-server
+      - participant-server
     restart: unless-stopped
 
   app-server:
     build: ./app-server
-    image: ghcr.io/icicle-ai/food-security-system-backend:latest
+    image: ghcr.io/icicle-ai/collaborative-research-sandbox-app-server:latest
     ports:
       - "5003:5003"
     volumes:
       - ./app-server:/app
     environment:
-      - MONGODB_URI=mongodb://mongodb:27017/digital_agriculture
-      - REACT_APP_FARMER_API_URL=http://digital-agriculture-sandbox-farmer-server-1:5001
-      - REACT_APP_PARAM_API_URL=http://digital-agriculture-sandbox-param-server-1:5002
+      - MONGODB_URI=mongodb://mongodb:27017/collaborative_research
+      - REACT_APP_PARTICIPANT_API_URL=http://collaborative-research-sandbox-participant-server-1:5001
+      - REACT_APP_PARAM_API_URL=http://collaborative-research-sandbox-param-server-1:5002
 
     env_file: "app-server/.env"
     depends_on:
       - mongodb
 
-  farmer-server:
-    build: ./farmer-server
-    image: ghcr.io/icicle-ai/food-security-system-sandbox:latest
+  participant-server:
+    build: ./participant-server
+    image: ghcr.io/icicle-ai/collaborative-research-sandbox-participant-server:latest
     ports:
       - "5001:5001"
     volumes:
-      - ./farmer-server:/app
+      - ./participant-server:/app
     environment:
-      - MONGODB_URI=mongodb://mongodb:27017/digital_agriculture
-    env_file: "farmer-server/.env"
+      - MONGODB_URI=mongodb://mongodb:27017/collaborative_research
+    env_file: "participant-server/.env"
     depends_on:
       - mongodb
-    
+
   param-server:
     build: ./param-server
-    image: ghcr.io/icicle-ai/food-security-system-param:latest
+    image: ghcr.io/icicle-ai/collaborative-research-sandbox-param-server:latest
     ports:
       - "5002:5002"
     volumes:
       - ./param-server:/app
     environment:
-      - MONGODB_URI=mongodb://mongodb:27017/digital_agriculture
-      - REACT_APP_FARMER_API_URL=http://digital-agriculture-sandbox-farmer-server-1:5001
+      - MONGODB_URI=mongodb://mongodb:27017/collaborative_research
+      - REACT_APP_PARTICIPANT_API_URL=http://collaborative-research-sandbox-participant-server-1:5001
     env_file: "param-server/.env"
     depends_on:
       - mongodb
@@ -68,7 +70,7 @@ services:
 
 volumes:
   mongodb_data:
-  frontend_node_modules: 
+  frontend_node_modules:
 
 
 networks:

@@ -80,7 +80,13 @@ const SimilarParticipants = ({userName, selectedDataset, userID}) => {
         <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
           {participants.map((participant, index) => (
             <React.Fragment key={index}>
-              <ListItem alignItems="center">
+              <ListItem
+                alignItems="center"
+                sx={{
+                  transition: 'background-color 0.16s ease, transform 0.16s ease',
+                  '&:hover': { backgroundColor: 'action.hover', transform: 'translateY(-1px)' },
+                }}
+              >
                 <ListItemAvatar>
                   <Avatar sx={{ bgcolor: 'primary.main' }}>
                     <PersonIcon />

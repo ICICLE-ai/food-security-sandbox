@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import './Chat.css';
 import { useLocation } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+import socket from '../../socket';
 
 function ChatApp() {
   const location = useLocation();
@@ -66,6 +67,27 @@ const Conversations = ({ senderID, receiverID, setReceiverID, setLoading }) => {
     }
   }, [senderID]); // Re-run effect when senderID changes
 
+  useEffect(() => {
+    if (!senderID) return;
+
+    const handleNewMessage = (msg) => {
+      const partnerId = msg.senderID === senderID ? msg.receiverID : msg.senderID;
+      setConversations((prev) => {
+        const existing = prev.find((c) => c.partner_id === partnerId);
+        const updated = {
+          partner_id: partnerId,
+          timestamp: msg.timestamp,
+          last_message: msg.message,
+        };
+        const rest = prev.filter((c) => c.partner_id !== partnerId);
+        return [updated, ...rest];
+      });
+    };
+
+    socket.on('new_message', handleNewMessage);
+    return () => socket.off('new_message', handleNewMessage);
+  }, [senderID]);
+
   return (
     <div className='conversations'>
       <div className="header">
@@ -87,6 +109,8 @@ const Conversations = ({ senderID, receiverID, setReceiverID, setLoading }) => {
 const ChatBox = (({ senderID, receiverID, setLoading }) => {
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
+  const [liveArrivals, setLiveArrivals] = useState(new Set());
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
     if (senderID && receiverID !== null) { // Only fetch messages if both IDs are available
@@ -105,6 +129,27 @@ const ChatBox = (({ senderID, receiverID, setLoading }) => {
     }
   }, [senderID, receiverID]); // Re-run effect when senderID or receiverID changes
 
+  useEffect(() => {
+    if (!senderID || receiverID === null) return;
+
+    const handleNewMessage = (msg) => {
+      const belongsToOpenConversation =
+        (msg.senderID === senderID && msg.receiverID === receiverID) ||
+        (msg.senderID === receiverID && msg.receiverID === senderID);
+      if (belongsToOpenConversation) {
+        setLiveArrivals((prev) => new Set(prev).add(`${msg.senderID}-${msg.timestamp}`));
+        setMessages((prev) => [...prev, msg]);
+      }
+    };
+
+    socket.on('new_message', handleNewMessage);
+    return () => socket.off('new_message', handleNewMessage);
+  }, [senderID, receiverID]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
   // Send message function
   const sendMessage = () => {
     if (senderID && receiverID !== null && message) {
@@ -121,8 +166,7 @@ const ChatBox = (({ senderID, receiverID, setLoading }) => {
           }
         })
         .then((response) => {
-          setMessages([...messages, { senderID, receiverID, message, timestamp }]);
-          setMessage(""); // Clear input
+          setMessage(""); // Clear input - the sent message arrives back via the 'new_message' socket event
         })
         .catch((error) => console.error(error));
     }
@@ -148,7 +192,7 @@ const ChatBox = (({ senderID, receiverID, setLoading }) => {
         {messages.map((msg, index) => (
           <div
             key={index}
-            className={`message ${msg.senderID === senderID ? "sent" : "received"}`}
+            className={`message ${msg.senderID === senderID ? "sent" : "received"} ${liveArrivals.has(`${msg.senderID}-${msg.timestamp}`) ? "message-arriving" : ""}`}
           >
             <div className="message-content">
               <p>{msg.message}</p>
@@ -156,15 +200,17 @@ const ChatBox = (({ senderID, receiverID, setLoading }) => {
             </div>
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
       <div className="input-container">
         <input
           type="text"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') sendMessage(); }}
           placeholder="Type a message"
         />
-        <button onClick={sendMessage}>Send</button>
+        <button onClick={sendMessage} disabled={!message.trim()}>Send</button>
       </div>
     </div>
   );

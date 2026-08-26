@@ -22,11 +22,11 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})  # Apply to all routes
 
 # MongoDB connection
-# mongo_uri = os.getenv('MONGODB_URI', 'mongodb://mongodb:27017/digital_agriculture')
+# mongo_uri = os.getenv('MONGODB_URI', 'mongodb://mongodb:27017/collaborative_research')
 # app_settings.sandbox_server_url = os.getenv('app_settings.sandbox_server_url', 'http://localhost:5001')
 
 client = MongoClient(app_settings.mongodb_uri)
-db = client.digital_agriculture
+db = client.collaborative_research
 messages_collection = db["messages"]
 
 
@@ -75,11 +75,11 @@ def send_request_to_train_local_model(
         response.raise_for_status()  # Raise an exception for bad status codes (4xx or 5xx)
         data = response.json()
         print(data["userID"], " ", data["training_time"])
-        # print(f"Received update from Farmer Server for user {user_id}: {data}") #  too verbose
+        # print(f"Received update from Participant Server for user {user_id}: {data}") #  too verbose
         with lock:
             updates_list.append(data)
     except requests.exceptions.RequestException as e:
-        print(f"Error sending request to Farmer Server for user {user_id}: {e}")
+        print(f"Error sending request to Participant Server for user {user_id}: {e}")
         # Consider adding error handling here, such as retrying the request
         # or logging the error to a file.  For now, we'll just print to the console.
         with lock:
@@ -170,7 +170,7 @@ def start_training_process(collaborators, metadata, model_id, hyperparameters, t
         # Check for any failed requests (None values in updates list)
         if None in client_updates:
             print(
-                "Warning: Some requests to Farmer Server failed.  Aggregation may be incomplete."
+                "Warning: Some requests to Participant Server failed.  Aggregation may be incomplete."
             )
             #  Remove the None values before proceeding with aggregation
             client_updates = [u for u in client_updates if u is not None]
@@ -207,7 +207,7 @@ def start_training_process(collaborators, metadata, model_id, hyperparameters, t
         end_time = time.time()
         total_time = end_time - start_time
         print(f"All training threads completed in {total_time:.4f} seconds.")
-        print(f"Received {len(client_updates)} updates from Farmer Server.")
+        print(f"Received {len(client_updates)} updates from Participant Server.")
 
         print(
             {
@@ -233,7 +233,7 @@ def start_training_process(collaborators, metadata, model_id, hyperparameters, t
 
 @app.route("/api/health", methods=["GET"])
 def health_check():
-    return jsonify({"status": "healthy", "service": "app-server"})
+    return jsonify({"status": "healthy", "service": "param-server"})
 
 
 @app.route("/api/start_training", methods=["POST"])

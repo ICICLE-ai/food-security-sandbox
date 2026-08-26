@@ -4,31 +4,70 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: #008000; /* Green background */
+    background:
+      radial-gradient(circle at 20% 25%, color-mix(in srgb, var(--color-primary) 25%, transparent), transparent 45%),
+      radial-gradient(circle at 80% 75%, color-mix(in srgb, var(--color-secondary) 22%, transparent), transparent 50%),
+      var(--color-background, #FAF8F4);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 9999;
-  }
-  
-  .loader-logo-wrapper {
-    background: #fff;           /* White background */
-    border-radius: 50%;         /* Make it circular */
-    padding: 32px;              /* Adjust as needed for your logo size */
+}
+
+.loader-logo-wrapper {
+    background: #fff;
+    border-radius: 50%;
+    padding: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.08);
-  }
-  
-  .loader-logo {
-    width: 100px;
-    height: 100px;
-    animation: rotate 1.2s linear infinite;
-  }
-  
-  @keyframes rotate {
-    100% {
-      transform: rotate(360deg);
+    box-shadow: 0 8px 32px color-mix(in srgb, var(--color-primary) 18%, transparent);
+    animation: loader-breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes loader-breathe {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 8px 32px color-mix(in srgb, var(--color-primary) 18%, transparent);
     }
-  }
+    50% {
+        transform: scale(1.04);
+        box-shadow: 0 10px 40px color-mix(in srgb, var(--color-primary) 28%, transparent);
+    }
+}
+
+.loader-logo .logo-node {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: loader-node-pulse 1.6s ease-in-out infinite;
+}
+
+.loader-logo .logo-node-1 { animation-delay: 0s; }
+.loader-logo .logo-node-2 { animation-delay: 0.2s; }
+.loader-logo .logo-node-3 { animation-delay: 0.4s; }
+.loader-logo .logo-node-4 { animation-delay: 0.6s; }
+
+@keyframes loader-node-pulse {
+    0%, 100% { transform: scale(0.85); opacity: 0.7; }
+    50% { transform: scale(1.15); opacity: 1; }
+}
+
+.loader-logo .logo-line {
+    stroke-dasharray: 6 6;
+    animation: loader-line-flow 1.2s linear infinite;
+}
+
+@keyframes loader-line-flow {
+    to { stroke-dashoffset: -24; }
+}
+
+.loader-logo .logo-center {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: loader-center-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes loader-center-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}

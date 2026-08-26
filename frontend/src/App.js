@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { AppBar, Toolbar, Typography } from "@mui/material";
+import { AppBar, Toolbar, Typography, Box } from "@mui/material";
 import { Home} from "./components";
 import LoggedIn from './components/Navigation/LoggedIn';
 import LoggedOut from './components/Navigation/LoggedOut';
@@ -9,8 +9,11 @@ import Chat from "./components/Chat/Chat";
 import DataSharing from "./components/DataSharing/DataSharing";
 import './App.css';
 import axios from 'axios';
+import AppLogo from "./assets/AppLogo";
 import icicleLogo from "./assets/icicleLogo.png"
+import taccLogo from "./tacc-black.png"
 import Loader from './components/Loader/Loader';
+import { connectSocket, disconnectSocket } from './socket';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -51,34 +54,49 @@ function App() {
 
 
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      connectSocket();
+    } else {
+      disconnectSocket();
+    }
+  }, [isAuthenticated]);
+
   const handleLogout = () => {
     localStorage.removeItem('tapis_token');
     localStorage.removeItem('tapis_username');
+    disconnectSocket();
     setIsAuthenticated(false);
   };
 
   return (
     
     <Router>
-      <AppBar position="static" sx={{ bgcolor: "green" }}> 
+      <AppBar position="static">
         <Toolbar>
-          <img src={icicleLogo} alt="ICICLE Logo" style={{
-                      'width': '50px',   
-                      'height': '50px',
-                      'backgroundColor' : 'white',
-                      'borderRadius' : '25px',
-                      'marginRight' : '10px'
-                    } }
-            />
-          {/* <BrightnessHighIcon sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }} /> */}
-          <Typography variant="h6" style={{ flexGrow: 1 }}>
-            Food System Sandbox
+          <AppLogo size={36} color="#ffffff" className="app-bar-logo" />
+          <Typography variant="h6" sx={{ flexGrow: 1, ml: 1.5, fontWeight: 600 }}>
+            Collaborative Research Sandbox
           </Typography>
           {isAuthenticated ? (
             <LoggedIn onLogout={handleLogout} />
           ) : (
             <LoggedOut />
           )}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              ml: 2,
+              pl: 2,
+              borderLeft: '1px solid rgba(255,255,255,0.3)',
+            }}
+            title="Powered by ICICLE and TACC"
+          >
+            <img src={icicleLogo} alt="ICICLE" style={{ height: 22, borderRadius: '50%', backgroundColor: 'white', padding: 1 }} />
+            <img src={taccLogo} alt="TACC" style={{ height: 16, backgroundColor: 'white', borderRadius: 3, padding: '2px 4px' }} />
+          </Box>
         </Toolbar>
       </AppBar>
 
