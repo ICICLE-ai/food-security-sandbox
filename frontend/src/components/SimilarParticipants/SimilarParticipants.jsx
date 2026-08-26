@@ -1,38 +1,38 @@
 import React, { useState } from 'react';
-import { 
-  Typography, 
-  Box, 
-  Button, 
-  List, 
-  ListItem, 
-  ListItemText, 
+import {
+  Typography,
+  Box,
+  Button,
+  List,
+  ListItem,
+  ListItemText,
   ListItemAvatar,
   Avatar,
-  Divider 
+  Divider
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom'; 
+import { useNavigate } from 'react-router-dom';
 import PersonIcon from '@mui/icons-material/Person';
-import ChatIcon from '@mui/icons-material/Chat'; 
+import ChatIcon from '@mui/icons-material/Chat';
 import axios from 'axios';
 
 
-const SimilarFarmers = ({userName, selectedDataset, userID}) => {
+const SimilarParticipants = ({userName, selectedDataset, userID}) => {
   const navigate = useNavigate();
-  const [farmers, setFarmers] = useState([]);
-  const [identifyFarmersClicked, setIdentifyFarmersClicked] = useState(false);
-  const handleFindFarmers = () => {
-    setIdentifyFarmersClicked(true);
+  const [participants, setParticipants] = useState([]);
+  const [identifyParticipantsClicked, setIdentifyParticipantsClicked] = useState(false);
+  const handleFindParticipants = () => {
+    setIdentifyParticipantsClicked(true);
     // Simply set the mock data
     const fetchProfiles = async () => {
       try {
         const token = localStorage.getItem('tapis_token');
-        const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/get_similar_farmers`, {selectedDataset},{
+        const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/get_similar_participants`, {selectedDataset},{
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
         console.log(response.data.collaborators)
-        setFarmers(response.data.collaborators)
+        setParticipants(response.data.collaborators)
 
       } catch (error) {
         console.error('Error fetching datasets:', error);
@@ -44,26 +44,26 @@ const SimilarFarmers = ({userName, selectedDataset, userID}) => {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Typography 
-        variant="h5" 
-        gutterBottom 
-        sx={{ 
+      <Typography
+        variant="h5"
+        gutterBottom
+        sx={{
           fontWeight: 'light',
           textAlign: 'center',
           mb: 3
         }}
       >
-        Finding Similar Farmers
+        Finding Similar Participants
       </Typography>
 
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
-        {identifyFarmersClicked == false ?<Button
+        {identifyParticipantsClicked == false ?<Button
           variant="contained"
-          onClick={handleFindFarmers}
-          sx={{ 
-            backgroundColor: '#008000',
+          onClick={handleFindParticipants}
+          sx={{
+            backgroundColor: 'primary.main',
             '&:hover': {
-              backgroundColor: '#009900',
+              backgroundColor: 'primary.dark',
             },
             px: 4,
             minWidth: 'fit-content',
@@ -71,56 +71,56 @@ const SimilarFarmers = ({userName, selectedDataset, userID}) => {
             width: 'auto'
           }}
         >
-          Find Similar Farmers
+          Find Similar Participants
         </Button>:<></>
         }
       </Box>
 
-      {farmers.length > 0 && (
+      {participants.length > 0 && (
         <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
-          {farmers.map((farmer, index) => (
+          {participants.map((participant, index) => (
             <React.Fragment key={index}>
               <ListItem alignItems="center">
                 <ListItemAvatar>
-                  <Avatar sx={{ bgcolor: '#008000' }}>
+                  <Avatar sx={{ bgcolor: 'primary.main' }}>
                     <PersonIcon />
                   </Avatar>
                 </ListItemAvatar>
                 <ListItemText
-                  primary={farmer.username}
-                  secondary={`Type: Farmer`}
+                  primary={participant.username}
+                  secondary="Participant"
                 />
-                <Button 
+                <Button
                   onClick={(event) => {
                     event.stopPropagation();
-                    //handleChat(farmer.id);
-                    navigate(`/chat/?receiver_id=${farmer.username}`);
+                    //handleChat(participant.id);
+                    navigate(`/chat/?receiver_id=${participant.username}`);
                   }}
-                  sx={{ 
+                  sx={{
                     color: 'primary.main',
                     minWidth: '40px'
                   }}
                 >
-                  <ChatIcon style={{ color: '#008000'}}/>
+                  <ChatIcon sx={{ color: 'primary.main' }}/>
                 </Button>
               </ListItem>
-              {index < farmers.length - 1 && <Divider variant="inset" component="li" />}
+              {index < participants.length - 1 && <Divider variant="inset" component="li" />}
             </React.Fragment>
           ))}
         </List>
       )}
-      {(farmers.length == 0 && !identifyFarmersClicked) && (
+      {(participants.length == 0 && !identifyParticipantsClicked) && (
         <Box sx={{ width: '100%', bgcolor: 'background.paper', textAlign: 'center', justifyContent:'center', alignItems: 'center' }}>
-        <h3 style={{color:'Green'}}>Click Identify Similar Farmer Identified.</h3>
+        <h3 style={{color:'Green'}}>Click Identify to find similar participants.</h3>
         </Box>
         )}
-      {(farmers.length == 0 && identifyFarmersClicked) && (
+      {(participants.length == 0 && identifyParticipantsClicked) && (
         <Box sx={{ width: '100%', bgcolor: 'background.paper', textAlign: 'center', justifyContent:'center', alignItems: 'center' }}>
-        <h3 style={{color:'red'}}>No Similar Farmer Identified.</h3>
+        <h3 style={{color:'red'}}>No similar participants identified.</h3>
         </Box>
         )}
     </Box>
   );
 };
 
-export default SimilarFarmers; 
+export default SimilarParticipants;
