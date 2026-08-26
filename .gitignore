@@ -6,3 +6,4 @@ param-server/.env
 farmer-server/__pycache__
 app-server/__pycache__
 param-server/__pycache__
+graphify-out
